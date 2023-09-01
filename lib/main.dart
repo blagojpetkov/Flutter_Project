@@ -50,6 +50,21 @@ class _CommandScreenState extends State<CommandScreen> {
     super.initState();
     _initSpeechRecognition();
     httpService.fetchToken();
+    this.setTTSEngine();
+  }
+
+  void setTTSEngine() async {
+    // List<dynamic> engines = await flutterTts.getEngines;
+    // dynamic engine = await flutterTts.getDefaultEngine;
+    // print("Default engine is " + engine);
+    // if (engines != null) {
+    //     for (dynamic engine in engines) {
+    //         print(engine);
+    //     }
+    // }
+    // else print("Engines is null");
+    await flutterTts.setEngine("com.github.olga_yakovleva.rhvoice.android");
+
   }
 
   Future<void> _initSpeechRecognition() async {
@@ -190,7 +205,7 @@ class _CommandScreenState extends State<CommandScreen> {
             ElevatedButton(
               child: Text("Press to hear a voice"),
               onPressed: () {
-                _speak("Hello, how are you?");
+                _speak("Здраво, јас сум Никола, вашиот личен читач на информации.");
               },
             )
           ],
