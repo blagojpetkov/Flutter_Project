@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:provider/provider.dart';
 
-class LinesScreen extends StatefulWidget {
+class BusLinesScreen extends StatefulWidget {
   @override
   _LinesScreenState createState() => _LinesScreenState();
 }
 
-class _LinesScreenState extends State<LinesScreen> {
+class _LinesScreenState extends State<BusLinesScreen> {
   @override
   void initState() {
     super.initState();
@@ -27,7 +28,16 @@ class _LinesScreenState extends State<LinesScreen> {
             itemCount: httpService.lines.length,
             itemBuilder: (context, index) {
               return Card(
-                child: ListTile(title: Text(httpService.lines[index].name)),
+                child: ListTile(
+                  title: Text(httpService.lines[index].name),
+                  onTap: () {  // Add onTap callback
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => BusLineDetailScreen(line: httpService.lines[index], httpService: httpService,),
+                      ),
+                    );
+                  },
+                ),
               );
             },
           );

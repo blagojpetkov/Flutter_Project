@@ -1,4 +1,4 @@
-class Stop {
+class BusStop {
   final int id;
   final int areaId;
   final String number;
@@ -8,7 +8,7 @@ class Stop {
   final double lon;
   final String note;
 
-  Stop({
+  BusStop({
     required this.id,
     required this.areaId,
     required this.number,
@@ -19,8 +19,8 @@ class Stop {
     required this.note,
   });
 
-  factory Stop.fromJson(Map<String, dynamic> json) {
-    return Stop(
+  factory BusStop.fromJson(Map<String, dynamic> json) {
+    return BusStop(
       id: json['id'],
       areaId: json['areaId'],
       number: json['number'],

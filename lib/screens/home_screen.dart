@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:postojka/screens/lines_screen.dart';
+import 'package:postojka/screens/bus_lines_screen.dart';
+import 'package:postojka/screens/bus_stops_screen.dart';
 import 'package:postojka/screens/map_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
@@ -54,9 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> get _pages => [
-        LinesScreen(),
-        LinesScreen(),
-        LinesScreen(),
+        BusLinesScreen(),
+        BusStopsScreen(),
+        BusStopsScreen(),
         MapScreen(),
         homeScreenCenter(),
       ];

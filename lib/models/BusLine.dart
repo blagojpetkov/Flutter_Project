@@ -1,4 +1,4 @@
-class Line {
+class BusLine {
   final int id;
   final String kind;
   final String number;
@@ -8,7 +8,7 @@ class Line {
   final String type;
   final String carrier;
 
-  Line({
+  BusLine({
     required this.id,
     required this.kind,
     required this.number,
@@ -19,8 +19,8 @@ class Line {
     required this.carrier,
   });
 
-  factory Line.fromJson(Map<String, dynamic> json) {
-    return Line(
+  factory BusLine.fromJson(Map<String, dynamic> json) {
+    return BusLine(
       id: json['id'],
       kind: json['kind'],
       number: json['number'],
@@ -34,6 +34,6 @@ class Line {
 
   @override
   String toString() {
-    return 'Line(id: $id, kind: $kind, number: $number, name: $name, nightly: $nightly, routeIds: $routeIds, type: $type, carrier: $carrier)';
+    return 'BusLine(id: $id, kind: $kind, number: $number, name: $name, nightly: $nightly, routeIds: $routeIds, type: $type, carrier: $carrier)';
   }
 }

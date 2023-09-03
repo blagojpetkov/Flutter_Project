@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../services/http_service.dart';
-import '../models/Stop.dart';
+import '../models/BusStop.dart';
 
 class MapScreen extends StatefulWidget {
 
@@ -11,7 +11,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  List<Stop> stops = [];
+  List<BusStop> stops = [];
   Set<Marker> _markers = {};
 
 
@@ -39,7 +39,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _displayMarkers() {
   Set<Marker> newMarkers = {};
-  for (Stop stop in stops) {
+  for (BusStop stop in stops) {
     newMarkers.add(
       Marker(
         markerId: MarkerId(stop.id.toString()),

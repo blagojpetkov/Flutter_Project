@@ -1,4 +1,4 @@
-class Route {
+class BusRoute {
   final int id;
   final int lineId;
   final String direction;
@@ -11,7 +11,7 @@ class Route {
   final List<int> stopIds;
   final List<int> stopOffsets;
 
-  Route({
+  BusRoute({
     required this.id,
     required this.lineId,
     required this.direction,
@@ -25,8 +25,21 @@ class Route {
     required this.stopOffsets,
   });
 
-  factory Route.fromJson(Map<String, dynamic> json) {
-    return Route(
+  BusRoute.empty()
+      : id = -1,  // Indicates an invalid ID
+        lineId = -1,
+        direction = '',
+        directionTranslations = {},
+        name = '',
+        nameTranslations = {},
+        begin = 0,
+        end = 0,
+        length = 0,
+        stopIds = [],
+        stopOffsets = [];
+
+  factory BusRoute.fromJson(Map<String, dynamic> json) {
+    return BusRoute(
       id: json['id'],
       lineId: json['lineId'],
       direction: json['direction'],
@@ -36,7 +49,7 @@ class Route {
       nameTranslations: Map<String, String>.from(json['nameTranslations']),
       begin: json['begin'],
       end: json['end'],
-      length: json['length'],
+      length: json['length'] ?? 0,
       stopIds: List<int>.from(json['stopIds']),
       stopOffsets: List<int>.from(json['stopOffsets']),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/screens/home_screen.dart';
-import 'package:postojka/screens/lines_screen.dart';
+import 'package:postojka/screens/bus_lines_screen.dart';
 import 'package:postojka/screens/map_screen.dart';
 import 'package:provider/provider.dart';
 import 'services/http_service.dart';
@@ -24,23 +24,23 @@ class MyApp extends StatelessWidget {
           primaryColor: Colors.purple,
         ),
         home: HomeScreen(),
-        routes: {
-          '/home': (context) {
-            return HomeScreen();
-          },
-          '/map': (context) {
-            return MapScreen();
-          },
-          '/lines': (context) {
-            return LinesScreen();
-          },
-          '/stops': (context) {
-            return LinesScreen();
-            // TODO
-          },
+        // routes: {
+        //   '/home': (context) {
+        //     return HomeScreen();
+        //   },
+        //   '/map': (context) {
+        //     return MapScreen();
+        //   },
+        //   '/lines': (context) {
+        //     return LinesScreen();
+        //   },
+        //   '/stops': (context) {
+        //     return LinesScreen();
+        //     // TODO
+        //   },
           
 
-        },
+        // },
       ),
     );
   }
