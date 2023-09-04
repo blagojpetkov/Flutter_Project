@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/main.dart';
+import 'package:postojka/models/BusLine.dart';
+import 'package:postojka/models/BusStop.dart';
+import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/screens/bus_lines_screen.dart';
+import 'package:postojka/screens/bus_stop_detail_screen.dart';
+import 'package:postojka/screens/bus_stops_nearby_screen.dart';
 import 'package:postojka/screens/bus_stops_screen.dart';
 import 'package:postojka/screens/map_screen.dart';
+import 'package:postojka/services/http_service.dart';
+import 'package:postojka/widgets/favorites_tab_screen.dart';
+import 'package:postojka/widgets/toggle_assistant.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -16,8 +26,16 @@ class _HomeScreenState extends State<HomeScreen> {
   final FlutterTts flutterTts = FlutterTts();
   bool _isListening = false;
   bool _isInitialized = false;
+  bool voiceAssistantMode = false;
   String _command = '';
   int _currentIndex = 0;
+
+  void setVoiceAssistantMode(bool voiceAssistantMode) {
+    setState(() {
+      this.voiceAssistantMode = voiceAssistantMode;
+    });
+    print(this.voiceAssistantMode);
+  }
 
   Widget homeScreenCenter() {
     return Center(
@@ -39,16 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             child: Text("Press to hear a voice"),
             onPressed: () {
-              _speak(
+              speak(
                   "Здраво, јас сум Никола, вашиот личен читач на информации.");
             },
           ),
-          ElevatedButton(
-            child: Text("Press to open the map"),
-            onPressed: () {
-              Navigator.of(context).pushNamed("/map");
-            },
-          )
+          ToggleAssistant(
+              voiceFunction: setVoiceAssistantMode,
+              toggleValue: voiceAssistantMode),
         ],
       ),
     );
@@ -57,12 +72,15 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> get _pages => [
         BusLinesScreen(),
         BusStopsScreen(),
-        BusStopsScreen(),
+        FavoritesTabScreen(),
         MapScreen(),
         homeScreenCenter(),
       ];
 
-  Future<void> _speak(String text) async {
+  List<String> titles = ["Линии", "Постојки", "Омилени", "Circle", "Square"];
+
+
+  Future<void> speak(String text) async {
     await flutterTts.speak(text);
   }
 
@@ -78,7 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initSpeechRecognition() async {
-    // Make this method asynchronous
     bool available = await _speech.initialize();
     if (available) {
       setState(() {
@@ -91,21 +108,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void handleCommand(String command) {
-    List<String> menu_values = [
-      "мен",
-      "мели",
-      "мени",
-      "meli",
-      "meni",
-      "мени",
-      "ени"
-    ];
+    // For bus lines when the BusLinesScreen is open
+    RegExp regExp = RegExp(r'(\d+)');
+    Match? match = regExp.firstMatch(command);
+    if (match != null && _currentIndex == 0) {
+      // Check if the recognized command is a number AND the BusLinesScreen is currently open
+      String number = match.group(1)!;
+      openBusLine(int.parse(number));
+    }
 
-    if (menu_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains Мени. Hooray!");
-      // Open the menu or navigate to the menu screen
-      // You can use Navigator to navigate to another screen
-      _scaffoldKey.currentState?.openDrawer();
+    // For bus stops when the BusStopsScreen is open:
+    RegExp regExpStop = RegExp(r'(\d+)');  
+    Match? matchStop = regExpStop.firstMatch(command);
+    if (matchStop != null && _currentIndex == 1) {
+        String stopNumber = matchStop.group(1)!;
+        openBusStop(stopNumber);
+    }
+
+    List<String> line_values = ["лигња", "инија", "инии", "limi"];
+    if (line_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains Линии. Hooray!");
+      setState(() {
+        _currentIndex = 0;
+      });
+      speak("Успешно го отворивте менито Линии");
+    }
+
+    List<String> bus_stop_values = [
+      "постојка",
+      "постојки",
+      "острици",
+      "остојки",
+      "постој",
+      "пост"
+    ];
+    if (bus_stop_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains постојки. Hooray!");
+      setState(() {
+        _currentIndex = 1; // Set index for Постојки
+      });
+      speak("Успешно го отворивте менито Постојки");
     }
 
     List<String> route_values = [
@@ -119,32 +161,56 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     if (route_values.any((item) => command.toLowerCase().contains(item))) {
       print("Command contains рути. Hooray!");
-      // Open the menu or navigate to the menu screen
-      // You can use Navigator to navigate to another screen
-    }
-
-    List<String> bus_stop_values = [
-      "постојка",
-      "постојки",
-      "острици",
-      "остојки",
-      "постој",
-      "пост"
-    ];
-    if (bus_stop_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains постојки. Hooray!");
-      // Open the menu or navigate to the menu screen
-      // You can use Navigator to navigate to another screen
     }
 
     List<String> helper_values = ["советник", "совет", "оветни"];
     if (helper_values.any((item) => command.toLowerCase().contains(item))) {
       print("Command contains советник. Hooray!");
-      // Open the menu or navigate to the menu screen
-      // You can use Navigator to navigate to another screen
     }
-    // Add more command handling logic as needed
   }
+
+  void openBusLine(int lineNumber) {
+    var httpService = Provider.of<HttpService>(context, listen: false); 
+    var targetLine = httpService.lines.firstWhere(
+        (line) => line.name == 'ЛИНИЈА $lineNumber', 
+        orElse: () => BusLine.empty()
+    );
+
+    if (targetLine.id != 0) {
+        Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (context) => BusLineDetailScreen(line: targetLine, httpService: httpService,),
+            ),
+        );
+        speak("Успешно го отворивте менито Линија $lineNumber. Оваа линија е од ${targetLine.type == 'URBAN' ? 'Градски' : 'Друг'} тип. Оператор на оваа линија е ${targetLine.carrier}.");
+        
+
+
+    } else {
+        speak("Не можев да најдам Линија $lineNumber. Ве молам обидете се повторно.");
+    }
+}
+
+void openBusStop(String stopNumber) {
+    var httpService = Provider.of<HttpService>(context, listen: false); 
+    var targetStop = httpService.stops.firstWhere(
+        (stop) => stop.number == stopNumber, 
+        orElse: () => BusStop.empty()
+    );
+
+    if (targetStop.id != 0) {
+        Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (context) => BusStopDetailScreen(busStop: targetStop),
+            ),
+        );
+        speak("Успешно ја отворивте постојката со број $stopNumber");
+    } else {
+        speak("Не можев да ја најдам постојката со број $stopNumber. Ве молам обидете се повторно.");
+    }
+}
+
+
 
   void startListening() {
     setState(() {
@@ -152,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     if (!_isListening && _isInitialized) {
       _speech.listen(
-        listenFor: Duration(seconds: 2),
+        listenFor: Duration(seconds: 3),
         onResult: (result) {
           print("This is the result: " + result.recognizedWords);
           setState(() {
@@ -166,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _isListening = true;
       });
 
-      Future.delayed(Duration(seconds: 2), () {
+      Future.delayed(Duration(seconds: 3), () {
         if (_isListening) {
           stopListening();
         }
@@ -188,27 +254,45 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
+        backgroundColor: AppColors.navBarColor,
         leading: Padding(
           padding: EdgeInsets.only(left: 8.0), // Adjust the value as needed
           child: Image.asset('assets/bus.png'),
         ),
         elevation: 4.0,
         title: Text(
-          'Постојка - Секогаш на време!',
+          titles[_currentIndex],
           style: TextStyle(fontSize: 20),
         ),
-        actions: <Widget>[],
+        actions: _currentIndex == 1
+            ? [
+                IconButton(
+                  icon: Icon(Icons.map),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BusStopsNearbyScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]
+            : [],
       ),
-      // drawer: Padding(
-      //   padding: const EdgeInsets.fromLTRB(0, 90, 0, 0),
-      //   child: _buildDrawer(),
-      // ),
-      body: _pages[_currentIndex],
-
+      body: Stack(
+        children: [
+          _pages[_currentIndex],
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _voiceAssistantButton(),
+          )
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.pink,
+        selectedItemColor: AppColors.color4,
+        unselectedItemColor: AppColors.primaryBackground,
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
@@ -238,74 +322,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: Column(
-        children: <Widget>[
-          Expanded(
-            child: ListView(
-              children: <Widget>[
-                _buildButton(title: 'Линии'),
-                _buildButton(title: 'Рути'),
-                _buildButton(title: 'Постојки'),
-                _buildVoiceControlButton('АКТИВИРАЈ ГЛАСОВНА КОНТРОЛА'),
-              ],
-            ),
-          ),
-          _buildAdvisorButton('Отвори советник'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildButton(
-      {required title,
-      Color bgColor = Colors.white,
-      Color textColor = Colors.black,
-      Color borderColor = Colors.purple}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16.0), // This line adds padding to left and right
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          side: BorderSide(color: borderColor),
-          primary: bgColor,
-          onSurface: Colors.purple,
-          minimumSize: Size(
-              double.infinity, 50), // Ensure consistent size for all buttons
-        ),
-        onPressed: () {},
-        child: Text(title, style: TextStyle(color: Colors.black)),
-      ),
-    );
-  }
-
-  Widget _buildVoiceControlButton(String title) {
-    return ElevatedButton(
-      child: Text(title),
-      style: ElevatedButton.styleFrom(
-        primary: Colors.deepPurpleAccent,
-        onPrimary: Colors.white,
-      ),
-      onPressed: () {
-        // Handle button press here
-      },
-    );
-  }
-
-  Widget _buildAdvisorButton(String title) {
-    return ElevatedButton(
-      child: Text(title),
-      style: ElevatedButton.styleFrom(
-        primary: Colors.purple.shade100,
-        onPrimary: Colors.black,
-      ),
-      onPressed: () {
-        // Handle button press here
-      },
     );
   }
 }
