@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/widgets/toggle_assistant.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final httpService = Provider.of<HttpService>(context);
+    httpService.setCurrentScreen(AppScreens.Settings);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

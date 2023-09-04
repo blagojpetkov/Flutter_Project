@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/main.dart';
+import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/favorite_bus_lines_screen.dart';
 import 'package:postojka/screens/favorite_bus_routes_screen.dart';
 import 'package:postojka/screens/favorite_bus_stops_screen.dart';
@@ -39,6 +40,10 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final httpService = Provider.of<HttpService>(context);
+    httpService.setCurrentScreen(AppScreens.Favorites);
+    if (httpService.voiceAssistantMode) {
+      httpService.speak("Успешно го отворивте менито Омилени");
+    }
   }
 
   @override

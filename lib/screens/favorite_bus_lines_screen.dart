@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,7 @@ class _FavoriteBusLinesScreenState extends State<FavoriteBusLinesScreen> {
   Widget build(BuildContext context) {
     return Consumer<HttpService>(
       builder: (context, httpService, child) {
+        httpService.setCurrentScreen(AppScreens.FavoriteBusLines);
         if (httpService.favoriteLines.isEmpty) {
           // If lines list is empty, show a loading indicator
           // return Center(child: CircularProgressIndicator());

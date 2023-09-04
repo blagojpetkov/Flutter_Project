@@ -1,0 +1,15 @@
+enum AppScreens {
+  Home,
+  BusLines,
+  BusStops,
+  Favorites,
+  BusLineDetail,
+  BusStopDetail,
+  BusRouteDetail,
+  Settings,
+  BusStopNearby,
+  FavoriteBusLines,
+  FavoriteBusStops,
+  FavoriteBusRoutes,
+  MapScreen,
+}

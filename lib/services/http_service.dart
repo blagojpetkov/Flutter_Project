@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:postojka/main.dart';
 import 'package:postojka/models/BusStopLine.dart';
+import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'dart:convert';
@@ -20,6 +21,12 @@ class HttpService with ChangeNotifier {
   final String tokenHeaderKey = "Eurogps.Eu.Sid";
   String? token;
 
+  int entityId = -1; // The ID of the line / route / stop
+
+  void setEntityId(int entityId) {
+    this.entityId = entityId;
+  }
+
   //Used to execute the fetchToken method every X seconds
   Timer? _timer;
   bool voiceAssistantMode = false;
@@ -30,11 +37,17 @@ class HttpService with ChangeNotifier {
   String command = '';
 
   int currentIndex = 0;
+  AppScreens currentScreen = AppScreens.BusLines;
+
+  void setCurrentScreen(AppScreens screen) {
+    currentScreen = screen;
+    print("Current screen is " + currentScreen.toString());
+  }
 
   void setCurrentIndex(int index) {
-  currentIndex = index;
-  notifyListeners(); 
-}
+    currentIndex = index;
+    notifyListeners();
+  }
 
   void setVoiceAssistantMode(bool voiceAssistantMode) {
     this.voiceAssistantMode = voiceAssistantMode;
@@ -42,15 +55,13 @@ class HttpService with ChangeNotifier {
     notifyListeners();
   }
 
-  bool isVoiceNavigationEnabled = false;
-
-  void toggleVoiceNavigation() {
-    isVoiceNavigationEnabled = !isVoiceNavigationEnabled;
-    notifyListeners(); // Notify listeners about the change.
+  Future<void> speak(String text) async {
+    await flutterTts.setSpeechRate(0.4);
+    await flutterTts.speak(text);
   }
 
-  Future<void> speak(String text) async {
-    await flutterTts.speak(text);
+  Future<void> stopSpeaking() async {
+    await flutterTts.stop();
   }
 
   void setTTSEngine() async {
@@ -66,28 +77,63 @@ class HttpService with ChangeNotifier {
     }
   }
 
+  List<BusStop> getStopsForRoute() {
+    BusRoute route = routes.firstWhere((route) => route.id == entityId);
+    return stops.where((stop) => route.stopIds.contains(stop.id)).toList();
+  }
+
   void handleCommand(String command, BuildContext context) {
     // For bus lines when the BusLinesScreen is open
     RegExp regExp = RegExp(r'(\d+)');
     Match? match = regExp.firstMatch(command);
-    if (match != null && currentIndex == 0) {
+    if (match != null &&
+        currentIndex == 0 &&
+        currentScreen == AppScreens.BusLines) {
       // Check if the recognized command is a number AND the BusLinesScreen is currently open
       String number = match.group(1)!;
       openBusLine(int.parse(number), context);
     }
 
     // For bus stops when the BusStopsScreen is open:
-    RegExp regExpStop = RegExp(r'(\d+)');
-    Match? matchStop = regExpStop.firstMatch(command);
-    if (matchStop != null && currentIndex == 1) {
-      String stopNumber = matchStop.group(1)!;
+    regExp = RegExp(r'(\d+)');
+    match = regExp.firstMatch(command);
+    if (match != null && currentIndex == 1) {
+      String stopNumber = match.group(1)!;
       openBusStop(stopNumber, context);
+    }
+    //For when bus route detail screen is open
+    match = regExp.firstMatch(command);
+    if (match != null && currentScreen == AppScreens.BusRouteDetail) {
+      int stopNumber = int.parse(match.group(1)!);
+      List<BusStop> stopsForThisRoute = getStopsForRoute();
+
+      if (stopNumber > 0 && stopNumber <= stopsForThisRoute.length) {
+        // Navigate to the detail page of the bus stop
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BusStopDetailScreen(
+              busStop: stopsForThisRoute[stopNumber - 1],
+            ),
+          ),
+        );
+      } else {
+        // Speak out an error or notification
+        speak("Избраниот број не е валидна постојка во оваа рута.");
+      }
+    }
+
+    List<String> go_back_values = ["зад", "назад"];
+    if (go_back_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains назад. Hooray!");
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
     }
 
     List<String> line_values = ["лигња", "инија", "инии", "limi"];
     if (line_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains Линии. Hooray!");
-      speak("Успешно го отворивте менито Линии");
+      // print("Command contains Линии. Hooray!");
       setCurrentIndex(0);
     }
 
@@ -100,9 +146,20 @@ class HttpService with ChangeNotifier {
       "пост"
     ];
     if (bus_stop_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains постојки. Hooray!");
-      speak("Успешно го отворивте менито Постојки");
+      // print("Command contains постојки. Hooray!");
       setCurrentIndex(1);
+    }
+
+    List<String> favorite_values = [
+      "омилен",
+      "милен",
+      "омилено",
+      "омилени",
+    ];
+
+    if (favorite_values.any((item) => command.toLowerCase().contains(item))) {
+      // print("Command contains постојки. Hooray!");
+      setCurrentIndex(2);
     }
 
     List<String> route_values = [
@@ -138,8 +195,6 @@ class HttpService with ChangeNotifier {
           ),
         ),
       );
-      speak(
-          "Успешно го отворивте менито Линија $lineNumber. Оваа линија е од ${targetLine.type == 'URBAN' ? 'Градски' : 'Друг'} тип. Оператор на оваа линија е ${targetLine.carrier}.");
     } else {
       speak(
           "Не можев да најдам Линија $lineNumber. Ве молам обидете се повторно.");
@@ -156,7 +211,6 @@ class HttpService with ChangeNotifier {
           builder: (context) => BusStopDetailScreen(busStop: targetStop),
         ),
       );
-      speak("Успешно ја отворивте постојката со број $stopNumber");
     } else {
       speak(
           "Не можев да ја најдам постојката со број $stopNumber. Ве молам обидете се повторно.");
@@ -169,7 +223,8 @@ class HttpService with ChangeNotifier {
         listenFor: Duration(seconds: 3),
         onResult: (result) {
           print("This is the result: " + result.recognizedWords);
-            command = result.recognizedWords;
+          command = result.recognizedWords;
+          notifyListeners();
           handleCommand(result.recognizedWords, context);
         },
         localeId: 'mk_MK',
@@ -187,16 +242,17 @@ class HttpService with ChangeNotifier {
   void stopListening() {
     if (isListening) {
       speech.stop();
-        isListening = false;
+      isListening = false;
     }
   }
 
   Widget voiceAssistantButton(BuildContext context) {
     return voiceAssistantMode
         ? Container(
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(16.0),
             child: ElevatedButton.icon(
               onPressed: () {
+                stopSpeaking();
                 if (isListening) {
                   stopListening();
                 } else {

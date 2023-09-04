@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/main.dart';
+import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_lines_screen.dart';
 import 'package:postojka/screens/bus_stops_nearby_screen.dart';
 import 'package:postojka/screens/bus_stops_screen.dart';
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     HttpService httpService = Provider.of<HttpService>(context);
+    httpService.setCurrentScreen(AppScreens.Home);
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(

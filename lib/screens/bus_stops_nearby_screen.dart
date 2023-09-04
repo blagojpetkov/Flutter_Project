@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:location/location.dart';
 import 'package:flutter/material.dart';
 import 'package:postojka/main.dart';
+import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:provider/provider.dart';
@@ -55,8 +56,8 @@ class _BusStopsNearbyScreenState extends State<BusStopsNearbyScreen> {
     if (_locationData != null) {
       if (_locationData!.latitude != null && _locationData!.longitude != null) {
         setState(() {
-          // userLocation = [_locationData!.latitude!, _locationData!.longitude!];
-          userLocation = const [41.9991, 21.3900];
+          userLocation = [_locationData!.latitude!, _locationData!.longitude!];
+          // userLocation = const [41.9991, 21.3900];
         });
         print(_locationData!.latitude);
         print(_locationData!.longitude);
@@ -76,7 +77,9 @@ class _BusStopsNearbyScreenState extends State<BusStopsNearbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allBusStops = Provider.of<HttpService>(context).stops;
+    HttpService httpService = Provider.of<HttpService>(context);
+    final allBusStops = httpService.stops;
+    httpService.setCurrentScreen(AppScreens.BusStopNearby);
     final nearbyBusStops =
         getNearbyBusStops(allBusStops, userLocation[0], userLocation[1]);
 
