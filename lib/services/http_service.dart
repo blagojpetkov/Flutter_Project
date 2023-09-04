@@ -1,13 +1,19 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/BusStopLine.dart';
+import 'package:postojka/screens/bus_line_detail_screen.dart';
+import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'dart:convert';
 
 import '../models/BusLine.dart';
 import '../models/BusRoute.dart';
 import '../models/BusStop.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
 
 class HttpService with ChangeNotifier {
   final String baseUrl = 'http://info.skopska.mk:8080';
@@ -16,9 +22,205 @@ class HttpService with ChangeNotifier {
 
   //Used to execute the fetchToken method every X seconds
   Timer? _timer;
+  bool voiceAssistantMode = false;
+  stt.SpeechToText speech = stt.SpeechToText();
+  final FlutterTts flutterTts = FlutterTts();
+  bool isListening = false;
+  bool isInitialized = false;
+  String command = '';
+
+  int currentIndex = 0;
+
+  void setCurrentIndex(int index) {
+  currentIndex = index;
+  notifyListeners(); 
+}
+
+  void setVoiceAssistantMode(bool voiceAssistantMode) {
+    this.voiceAssistantMode = voiceAssistantMode;
+    print(this.voiceAssistantMode);
+    notifyListeners();
+  }
+
+  bool isVoiceNavigationEnabled = false;
+
+  void toggleVoiceNavigation() {
+    isVoiceNavigationEnabled = !isVoiceNavigationEnabled;
+    notifyListeners(); // Notify listeners about the change.
+  }
+
+  Future<void> speak(String text) async {
+    await flutterTts.speak(text);
+  }
+
+  void setTTSEngine() async {
+    await flutterTts.setEngine("com.github.olga_yakovleva.rhvoice.android");
+  }
+
+  Future<void> initSpeechRecognition() async {
+    bool available = await speech.initialize();
+    if (available) {
+      isInitialized = true; // Set this to true if initialization is successful
+    } else {
+      // Handle the error as needed, maybe show a dialog or toast message
+    }
+  }
+
+  void handleCommand(String command, BuildContext context) {
+    // For bus lines when the BusLinesScreen is open
+    RegExp regExp = RegExp(r'(\d+)');
+    Match? match = regExp.firstMatch(command);
+    if (match != null && currentIndex == 0) {
+      // Check if the recognized command is a number AND the BusLinesScreen is currently open
+      String number = match.group(1)!;
+      openBusLine(int.parse(number), context);
+    }
+
+    // For bus stops when the BusStopsScreen is open:
+    RegExp regExpStop = RegExp(r'(\d+)');
+    Match? matchStop = regExpStop.firstMatch(command);
+    if (matchStop != null && currentIndex == 1) {
+      String stopNumber = matchStop.group(1)!;
+      openBusStop(stopNumber, context);
+    }
+
+    List<String> line_values = ["лигња", "инија", "инии", "limi"];
+    if (line_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains Линии. Hooray!");
+      speak("Успешно го отворивте менито Линии");
+      setCurrentIndex(0);
+    }
+
+    List<String> bus_stop_values = [
+      "постојка",
+      "постојки",
+      "острици",
+      "остојки",
+      "постој",
+      "пост"
+    ];
+    if (bus_stop_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains постојки. Hooray!");
+      speak("Успешно го отворивте менито Постојки");
+      setCurrentIndex(1);
+    }
+
+    List<String> route_values = [
+      "рут",
+      "руд",
+      "rut",
+      "rud",
+      "tutti",
+      "fruthi",
+      "fruithy"
+    ];
+    if (route_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains рути. Hooray!");
+    }
+
+    List<String> helper_values = ["советник", "совет", "оветни"];
+    if (helper_values.any((item) => command.toLowerCase().contains(item))) {
+      print("Command contains советник. Hooray!");
+    }
+  }
+
+  void openBusLine(int lineNumber, BuildContext context) {
+    var targetLine = lines.firstWhere(
+        (line) => line.name == 'ЛИНИЈА $lineNumber',
+        orElse: () => BusLine.empty());
+
+    if (targetLine.id != 0) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => BusLineDetailScreen(
+            line: targetLine,
+            httpService: this,
+          ),
+        ),
+      );
+      speak(
+          "Успешно го отворивте менито Линија $lineNumber. Оваа линија е од ${targetLine.type == 'URBAN' ? 'Градски' : 'Друг'} тип. Оператор на оваа линија е ${targetLine.carrier}.");
+    } else {
+      speak(
+          "Не можев да најдам Линија $lineNumber. Ве молам обидете се повторно.");
+    }
+  }
+
+  void openBusStop(String stopNumber, BuildContext context) {
+    var targetStop = stops.firstWhere((stop) => stop.number == stopNumber,
+        orElse: () => BusStop.empty());
+
+    if (targetStop.id != 0) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => BusStopDetailScreen(busStop: targetStop),
+        ),
+      );
+      speak("Успешно ја отворивте постојката со број $stopNumber");
+    } else {
+      speak(
+          "Не можев да ја најдам постојката со број $stopNumber. Ве молам обидете се повторно.");
+    }
+  }
+
+  void startListening(BuildContext context) {
+    if (!isListening && isInitialized) {
+      speech.listen(
+        listenFor: Duration(seconds: 3),
+        onResult: (result) {
+          print("This is the result: " + result.recognizedWords);
+            command = result.recognizedWords;
+          handleCommand(result.recognizedWords, context);
+        },
+        localeId: 'mk_MK',
+      );
+      isListening = true;
+
+      Future.delayed(Duration(seconds: 3), () {
+        if (isListening) {
+          stopListening();
+        }
+      });
+    }
+  }
+
+  void stopListening() {
+    if (isListening) {
+      speech.stop();
+        isListening = false;
+    }
+  }
+
+  Widget voiceAssistantButton(BuildContext context) {
+    return voiceAssistantMode
+        ? Container(
+            padding: const EdgeInsets.all(10.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                if (isListening) {
+                  stopListening();
+                } else {
+                  startListening(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                primary: AppColors.navBarColor, // Choose your color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              ),
+              icon: Icon(Icons.mic, size: 30),
+              label: Text("Voice Command"),
+            ),
+          )
+        : SizedBox.shrink();
+  }
 
   HttpService() {
     fetchToken();
+    setTTSEngine();
+    initSpeechRecognition();
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       print("EXECUTED TIMER");
       fetchBusStopLines();
@@ -187,36 +389,4 @@ class HttpService with ChangeNotifier {
       throw Exception('Failed to fetch BusStopLines');
     }
   }
-
-  Future<dynamic> get(String endpoint) async {
-    final response = await http.get(Uri.parse('$baseUrl/$endpoint'), headers: {
-      "Content-Type": "application/json",
-      tokenHeaderKey: token ?? ""
-    });
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load data');
-    }
-  }
-
-  Future<dynamic> post(String endpoint, [dynamic data]) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: {
-        "Content-Type": "application/json",
-        tokenHeaderKey: token ?? ""
-      },
-      body: json.encode(data),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to post data');
-    }
-  }
-
-  // You can also add methods for PUT, DELETE, etc.
 }
