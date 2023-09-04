@@ -62,7 +62,7 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
             controller: _tabController,
             indicatorColor: Theme.of(context)
                 .colorScheme
-                .secondary, // Use your theme's secondary color
+                .secondary,
             tabs: [
               Tab(text: 'Линии'),
               Tab(text: 'Постојки'),

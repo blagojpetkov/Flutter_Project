@@ -18,12 +18,15 @@ class SettingsScreen extends StatelessWidget {
           Text('Spoken Command: ${httpService.command}'),
           SizedBox(height: 20),
           ElevatedButton(
-            onPressed: httpService.isListening ? null : () => httpService.startListening(context),
+            onPressed: httpService.isListening
+                ? null
+                : () => httpService.startListening(context),
             child: Text('Start Listening'),
           ),
           SizedBox(height: 10),
           ElevatedButton(
-            onPressed: httpService.isListening ? httpService.stopListening : null,
+            onPressed:
+                httpService.isListening ? httpService.stopListening : null,
             child: Text('Stop Listening'),
           ),
           SizedBox(height: 10),
@@ -37,6 +40,16 @@ class SettingsScreen extends StatelessWidget {
           ToggleAssistant(
               voiceFunction: httpService.setVoiceAssistantMode,
               toggleValue: httpService.voiceAssistantMode),
+          SwitchListTile(
+            title: Text("Висок Контраст"),
+            value:
+                Provider.of<HttpService>(context, listen: false).isHighContrast,
+            onChanged: (value) {
+              Provider.of<HttpService>(context, listen: false).toggleTheme();
+            },
+            activeColor: Colors.green,
+            inactiveThumbColor: Colors.red,
+          )
         ],
       ),
     );

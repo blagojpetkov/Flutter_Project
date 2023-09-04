@@ -17,6 +17,9 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 
 class HttpService with ChangeNotifier {
+  late ThemeData _currentTheme;
+  bool _isHighContrast = false;
+
   final String baseUrl = 'http://info.skopska.mk:8080';
   final String tokenHeaderKey = "Eurogps.Eu.Sid";
   String? token;
@@ -71,9 +74,9 @@ class HttpService with ChangeNotifier {
   Future<void> initSpeechRecognition() async {
     bool available = await speech.initialize();
     if (available) {
-      isInitialized = true; // Set this to true if initialization is successful
+      isInitialized = true;
     } else {
-      // Handle the error as needed, maybe show a dialog or toast message
+      // Handle the error
     }
   }
 
@@ -89,7 +92,7 @@ class HttpService with ChangeNotifier {
     if (match != null &&
         currentIndex == 0 &&
         currentScreen == AppScreens.BusLines) {
-      // Check if the recognized command is a number AND the BusLinesScreen is currently open
+      // Check if the BusLinesScreen is currently open
       String number = match.group(1)!;
       openBusLine(int.parse(number), context);
     }
@@ -118,14 +121,13 @@ class HttpService with ChangeNotifier {
           ),
         );
       } else {
-        // Speak out an error or notification
         speak("Избраниот број не е валидна постојка во оваа рута.");
       }
     }
 
     List<String> go_back_values = ["зад", "назад"];
     if (go_back_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains назад. Hooray!");
+      print("Command contains назад.");
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
@@ -133,7 +135,7 @@ class HttpService with ChangeNotifier {
 
     List<String> line_values = ["лигња", "инија", "инии", "limi"];
     if (line_values.any((item) => command.toLowerCase().contains(item))) {
-      // print("Command contains Линии. Hooray!");
+      // print("Command contains Линии.");
       setCurrentIndex(0);
     }
 
@@ -146,7 +148,7 @@ class HttpService with ChangeNotifier {
       "пост"
     ];
     if (bus_stop_values.any((item) => command.toLowerCase().contains(item))) {
-      // print("Command contains постојки. Hooray!");
+      // print("Command contains постојки.");
       setCurrentIndex(1);
     }
 
@@ -158,7 +160,7 @@ class HttpService with ChangeNotifier {
     ];
 
     if (favorite_values.any((item) => command.toLowerCase().contains(item))) {
-      // print("Command contains постојки. Hooray!");
+      // print("Command contains постојки.");
       setCurrentIndex(2);
     }
 
@@ -172,12 +174,12 @@ class HttpService with ChangeNotifier {
       "fruithy"
     ];
     if (route_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains рути. Hooray!");
+      print("Command contains рути.");
     }
 
     List<String> helper_values = ["советник", "совет", "оветни"];
     if (helper_values.any((item) => command.toLowerCase().contains(item))) {
-      print("Command contains советник. Hooray!");
+      print("Command contains советник.");
     }
   }
 
@@ -273,7 +275,53 @@ class HttpService with ChangeNotifier {
         : SizedBox.shrink();
   }
 
+  getTheme() => _currentTheme;
+  bool get isHighContrast => _isHighContrast;
+
+  toggleTheme() {
+    if (_isHighContrast) {
+      _currentTheme = buildAppTheme();
+      _isHighContrast = false;
+    } else {
+      _currentTheme = buildHighContrastTheme();
+      _isHighContrast = true;
+    }
+    notifyListeners();
+  }
+
+   ThemeData buildHighContrastTheme() {
+    return ThemeData(
+      primaryColor: Colors.black,
+      colorScheme: ColorScheme.dark(
+        primary: Colors.white,
+        secondary: Colors.black,
+      ),
+      scaffoldBackgroundColor: Colors.black,
+      buttonTheme: ButtonThemeData(
+        buttonColor: Colors.white,
+        textTheme: ButtonTextTheme.primary,
+      ),
+    );
+  }
+
+  ThemeData buildAppTheme() {
+  return ThemeData(
+    primaryColor: AppColors.primaryBackground,
+    colorScheme: const ColorScheme.light(
+      primary: AppColors.color4,
+      secondary: AppColors.accentColor1, 
+    ),
+    scaffoldBackgroundColor: AppColors.primaryBackground,
+    buttonTheme: const ButtonThemeData(
+      buttonColor: AppColors.color4,
+      textTheme: ButtonTextTheme.primary, // This will ensure button text is readable against the button color
+    ),
+    // ... Add other ThemeData properties as needed
+  );
+}
+
   HttpService() {
+    _currentTheme = buildAppTheme();
     fetchToken();
     setTTSEngine();
     initSpeechRecognition();

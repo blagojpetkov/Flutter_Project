@@ -13,15 +13,20 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => HttpService(),
-      child: MaterialApp(
-        title: 'Flutter Demo',
-        theme: buildAppTheme(),
-        home: HomeScreen(),
-      ),
-    );
-  }
+  return ChangeNotifierProvider(
+    create: (context) => HttpService(),
+    child: Builder(
+      builder: (context) {
+        HttpService httpService = Provider.of<HttpService>(context);
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: httpService.getTheme(),
+          home: HomeScreen(),
+        );
+      },
+    ),
+  );
+}
 
   ThemeData buildAppTheme() {
   return ThemeData(
@@ -33,9 +38,9 @@ class MyApp extends StatelessWidget {
     scaffoldBackgroundColor: AppColors.primaryBackground,
     buttonTheme: const ButtonThemeData(
       buttonColor: AppColors.color4,
-      textTheme: ButtonTextTheme.primary, // This will ensure button text is readable against the button color
+      textTheme: ButtonTextTheme.primary, 
     ),
-    // ... Add other ThemeData properties as needed
+    
   );
 }
 

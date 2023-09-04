@@ -88,7 +88,7 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.color4,
+                      color: widget.httpService.isHighContrast ? Colors.white: AppColors.color4,
                     ),
                   ),
                 ),
@@ -115,7 +115,7 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.color4,
+                      color: widget.httpService.isHighContrast ? Colors.white: AppColors.color4,
                     ),
                   ),
                 ),
