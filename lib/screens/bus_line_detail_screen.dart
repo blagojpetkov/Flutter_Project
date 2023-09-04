@@ -1,20 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/screens/bus_route_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
-
-class BusLineDetailScreen extends StatelessWidget {
+class BusLineDetailScreen extends StatefulWidget {
   final BusLine line;
   final HttpService httpService;
 
   BusLineDetailScreen({required this.line, required this.httpService});
 
   @override
+  _BusLineDetailScreenState createState() => _BusLineDetailScreenState();
+}
+
+class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
+  bool isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavoriteStatus();
+  }
+
+  _checkFavoriteStatus() {
+    setState(() {
+      isFavorite = widget.httpService.isLineFavorite(widget.line);
+    });
+  }
+
+  _toggleFavoriteStatus() {
+    widget.httpService.toggleFavoriteLine(widget.line);
+    _checkFavoriteStatus();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Детали за линија ${line.number}'),
-        backgroundColor: Colors.purple,
+        title: Text('Детали за линија ${widget.line.number}'),
+        backgroundColor: AppColors.primaryBackground,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? AppColors.color4 : Colors.white,
+            ),
+            onPressed: _toggleFavoriteStatus,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -23,27 +56,27 @@ class BusLineDetailScreen extends StatelessWidget {
           children: [
             Center(
               child: Text(
-                line.name,
+                widget.line.name,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.purple,
+                  color: AppColors.color4,
                 ),
               ),
             ),
             SizedBox(height: 20),
             Text(
-              'Вид: ${line.type == 'URBAN' ? 'Градски' : 'Друг'}',
+              'Вид: ${widget.line.type == 'URBAN' ? 'Градски' : 'Друг'}',
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 10),
             Text(
-              'Оператор: ${line.carrier}',
+              'Оператор: ${widget.line.carrier}',
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 10),
             Text(
-              'Ноќен: ${line.nightly ? 'Да' : 'Не'}',
+              'Ноќен: ${widget.line.nightly ? 'Да' : 'Не'}',
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 20),
@@ -54,17 +87,17 @@ class BusLineDetailScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.purple,
+                  color: AppColors.color4,
                 ),
               ),
             ),
             SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
-                itemCount: line.routeIds.length,
+                itemCount: widget.line.routeIds.length,
                 itemBuilder: (context, index) {
-                  final route = httpService.findRouteById(line.routeIds[index]);
-                  final stops = httpService.stops;
+                  final route = widget.httpService.findRouteById(widget.line.routeIds[index]);
+                  final stops = widget.httpService.stops;
                   return ElevatedButton(
                     onPressed: () {
                       // Navigate to RouteDetails screen when button is pressed
@@ -72,12 +105,11 @@ class BusLineDetailScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              RouteDetailScreen(route: route, allStops: stops, line: line,),
+                              BusRouteDetailScreen(route: route, allStops: stops, line: widget.line,),
                         ),
                       );
                     },
                     child: Text('${route?.name ?? 'Неизвестна рута'}'),
-                    style: ElevatedButton.styleFrom(primary: Colors.purple),
                   );
                 },
               ),

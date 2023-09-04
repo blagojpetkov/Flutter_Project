@@ -19,6 +19,18 @@ class BusStop {
     required this.note,
   });
 
+
+ // Empty constructor
+  BusStop.empty()
+      : id = 0,
+        areaId = 0,
+        number = '',
+        name = '',
+        translations = {},
+        lat = 0.0,
+        lon = 0.0,
+        note = '';
+        
   factory BusStop.fromJson(Map<String, dynamic> json) {
     return BusStop(
       id: json['id'],

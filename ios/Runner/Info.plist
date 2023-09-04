@@ -27,6 +27,11 @@
 
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to show nearby bus stops</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need your location to show nearby bus stops</string>
+
 
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

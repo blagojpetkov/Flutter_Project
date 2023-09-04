@@ -18,6 +18,17 @@ class BusLine {
     required this.type,
     required this.carrier,
   });
+  
+  // Empty constructor
+  BusLine.empty()
+      : id = 0,
+        kind = '',
+        number = '',
+        name = '',
+        nightly = false,
+        routeIds = [],
+        type = '',
+        carrier = '';
 
   factory BusLine.fromJson(Map<String, dynamic> json) {
     return BusLine(

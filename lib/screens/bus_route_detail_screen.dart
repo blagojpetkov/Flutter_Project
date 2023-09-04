@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/models/BusRoute.dart';
 import 'package:postojka/models/BusStop.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart';
 
-class RouteDetailScreen extends StatelessWidget {
+class BusRouteDetailScreen extends StatelessWidget {
   final BusRoute route;
   final BusLine line;
   final List<BusStop> allStops; // assuming you'll pass all stops
 
-  RouteDetailScreen(
+  BusRouteDetailScreen(
       {required this.route, required this.allStops, required this.line});
 
   List<BusStop> getStopsForRoute() {
@@ -56,6 +57,7 @@ class RouteDetailScreen extends StatelessWidget {
               'Постојки:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            Container(height: 10,),
             Expanded(
               child: ListView.builder(
                 itemCount: stopsForThisRoute.length,
@@ -72,6 +74,7 @@ class RouteDetailScreen extends StatelessWidget {
                       );
                     },
                     child: Text(stop.name),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondaryBackground),
                   );
 
                 },
