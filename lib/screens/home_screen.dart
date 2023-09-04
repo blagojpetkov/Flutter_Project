@@ -96,12 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Омилени',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.circle),
-            label: 'Circle',
+            icon: Icon(Icons.map_outlined),
+            label: 'Мапа',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.square),
-            label: 'Square',
+            label: 'Поставки',
           ),
         ],
       ),
