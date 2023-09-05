@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/Arrival.dart';
 import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/models/BusStop.dart';
 import 'package:postojka/models/BusStopLine.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/services/http_service.dart';
+import 'package:postojka/services/theme_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 
 class BusStopDetailScreen extends StatefulWidget {
@@ -16,8 +19,17 @@ class BusStopDetailScreen extends StatefulWidget {
   _BusStopDetailsScreenState createState() => _BusStopDetailsScreenState();
 }
 
-class _BusStopDetailsScreenState extends State<BusStopDetailScreen>
-    with WidgetsBindingObserver {
+class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
+  bool isFavorite = false;
+
+  _toggleFavoriteStatus() {
+    HttpService httpService = Provider.of<HttpService>(context, listen: false);
+    httpService.toggleFavoriteBusStop(widget.busStop);
+    setState(() {
+      isFavorite = httpService.isStopFavorite(widget.busStop);
+    });
+  }
+
   late List<BusStopLine> busStopLines;
   late List<BusLine> busLines;
   late List<Arrival> arrivals;
@@ -26,7 +38,8 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final httpService = Provider.of<HttpService>(context);
-    httpService.setCurrentScreen(AppScreens.BusStopDetail);
+    final voiceService = Provider.of<VoiceService>(context, listen: false);
+
     busStopLines = httpService.busStopLines
         .where((line) => line.stopId == widget.busStop.id)
         .toList();
@@ -44,28 +57,14 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen>
     }).toList();
 
     arrivals.sort((a, b) => a.timeInMinutes.compareTo(b.timeInMinutes));
-    if (httpService.voiceAssistantMode) {
-      httpService.speak(
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak(
           "Успешно ја отворивте постојката со име ${widget.busStop.name} со број ${widget.busStop.number}"
           "Линии кои пристигаат на оваа постојка наскоро се:"
           "${getAllArrivalsAsString()}");
+      print(
+          "Успешно ја отворивте постојката со име ${widget.busStop.name} со број ${widget.busStop.number}");
     }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      // This code will be executed every time the app is brought back to the foreground
-      final httpService = Provider.of<HttpService>(context, listen: false);
-      httpService.setCurrentScreen(AppScreens.BusStopDetail);
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance!.removeObserver(this); // Unregister the observer
-    super.dispose();
   }
 
   String formatArrival(Arrival arrival) {
@@ -73,14 +72,32 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen>
   }
 
   String getAllArrivalsAsString() {
-    return arrivals.map(formatArrival).join(', ');
+    return arrivals.take(10).map(formatArrival).join(', ');
   }
 
   @override
   Widget build(BuildContext context) {
-    HttpService httpService = Provider.of<HttpService>(context);
+    VoiceService voiceService = Provider.of<VoiceService>(context);
+    ThemeService themeService = Provider.of<ThemeService>(context);
     return Scaffold(
-      appBar: AppBar(title: Text("${widget.busStop.name}")),
+      appBar: AppBar(
+        title: Text("${widget.busStop.name}"),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite
+                  ? themeService.isHighContrast
+                      ? Colors.white
+                      : AppColors.primaryBackground
+                  : themeService.isHighContrast
+                      ? AppColors.primaryBackground
+                      : Colors.white,
+            ),
+            onPressed: _toggleFavoriteStatus,
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           ListView.builder(
@@ -96,14 +113,15 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen>
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: httpService.voiceAssistantButton(context),
+            child: voiceService.voiceAssistantButton(
+                context, AppScreens.BusStopDetail),
           )
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Action to be performed when FAB is clicked
-          httpService.stopSpeaking();
+          voiceService.stopSpeaking();
         },
         child: Icon(Icons.stop),
       ),

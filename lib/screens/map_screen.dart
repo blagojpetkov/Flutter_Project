@@ -21,7 +21,6 @@ class _MapScreenState extends State<MapScreen> {
     super.didChangeDependencies();
     final httpService = Provider.of<HttpService>(context);
     stops = httpService.stops;
-    httpService.setCurrentScreen(AppScreens.MapScreen);
   }
 
   @override

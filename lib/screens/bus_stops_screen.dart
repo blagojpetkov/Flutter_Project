@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart'; // Ensure this import exists.
 import 'package:postojka/services/http_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 
 class BusStopsScreen extends StatefulWidget {
@@ -10,19 +11,15 @@ class BusStopsScreen extends StatefulWidget {
 }
 
 class _BusStopsScreenState extends State<BusStopsScreen> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    HttpService httpService = Provider.of<HttpService>(context);
-    httpService.setCurrentScreen(AppScreens.BusStops);
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HttpService>(
-      builder: (context, httpService, child) {
-        if (httpService.voiceAssistantMode) {
-          httpService.speak("Успешно го отворивте менито постојки");
+    HttpService httpService = Provider.of<HttpService>(context, listen: false);
+    VoiceService voiceService = Provider.of<VoiceService>(context, listen: false);
+
+    if (voiceService.voiceAssistantMode) {
+          voiceService.speak("Успешно го отворивте менито постојки");
+          print("Успешно го отворивте менито постојки");
         }
         if (httpService.stops.isEmpty) {
           // If stops list is empty, show a loading indicator
@@ -48,7 +45,5 @@ class _BusStopsScreenState extends State<BusStopsScreen> {
             },
           );
         }
-      },
-    );
+      }
   }
-}

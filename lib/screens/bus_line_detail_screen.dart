@@ -4,6 +4,8 @@ import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_route_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
+import 'package:postojka/services/theme_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 
 class BusLineDetailScreen extends StatefulWidget {
@@ -29,20 +31,6 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
 }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    HttpService httpService = Provider.of<HttpService>(context);
-    httpService.setCurrentScreen(AppScreens.BusLineDetail);
-    if (httpService.voiceAssistantMode) {
-      httpService.speak(
-          "Успешно го отворивте менито Линија ${widget.line.number}."
-          "Оваа линија е од ${widget.line.type == 'URBAN' ? 'Градски' : 'Друг'} тип."
-          "Оператор на оваа линија е ${widget.line.carrier}."
-          "Рути на оваа линија се: ${getAllRouteNamesWithOrder()}");
-    }
-  }
-
-  @override
   void initState() {
     super.initState();
     _checkFavoriteStatus();
@@ -61,6 +49,17 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeService themeService = Provider.of<ThemeService>(context);
+    VoiceService voiceService = Provider.of<VoiceService>(context, listen: false);
+    widget.httpService.setEntityId(widget.line.id);
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak(
+          "Успешно го отворивте менито Линија ${widget.line.number}."
+          "Оваа линија е од ${widget.line.type == 'URBAN' ? 'Градски' : 'Друг'} тип."
+          "Оператор на оваа линија е ${widget.line.carrier}."
+          "Рути на оваа линија се: ${getAllRouteNamesWithOrder()}");
+          print("Успешно го отворивте менито Линија ${widget.line.number}");
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text('Детали за Линија ${widget.line.number}'),
@@ -69,7 +68,7 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
           IconButton(
             icon: Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? AppColors.color4 : Colors.white,
+              color: isFavorite ? themeService.isHighContrast ? Colors.white: AppColors.color4 : themeService.isHighContrast ? AppColors.color4 : Colors.white,
             ),
             onPressed: _toggleFavoriteStatus,
           ),
@@ -88,7 +87,7 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: widget.httpService.isHighContrast ? Colors.white: AppColors.color4,
+                      color: themeService.isHighContrast ? Colors.white: AppColors.color4,
                     ),
                   ),
                 ),
@@ -115,7 +114,7 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: widget.httpService.isHighContrast ? Colors.white: AppColors.color4,
+                      color: themeService.isHighContrast ? Colors.white: AppColors.color4,
                     ),
                   ),
                 ),
@@ -151,7 +150,7 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: widget.httpService.voiceAssistantButton(context),
+            child: voiceService.voiceAssistantButton(context, AppScreens.BusLineDetail),
           )
         ],
       ),

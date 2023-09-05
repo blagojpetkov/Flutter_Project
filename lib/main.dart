@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/screens/home_screen.dart';
+import 'package:postojka/services/theme_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 import 'services/http_service.dart';
 
@@ -10,42 +12,38 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
-  @override
+  // This widget is the root of your application.@override
   Widget build(BuildContext context) {
-  return ChangeNotifierProvider(
-    create: (context) => HttpService(),
-    child: Builder(
-      builder: (context) {
-        HttpService httpService = Provider.of<HttpService>(context);
-        return MaterialApp(
-          title: 'Flutter Demo',
-          theme: httpService.getTheme(),
-          home: HomeScreen(),
-        );
-      },
-    ),
-  );
-}
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<HttpService>(
+          create: (context) => HttpService(),
+        ),
+        ChangeNotifierProvider<ThemeService>(
+          create: (context) => ThemeService(),
+        ),
+        ChangeNotifierProvider<VoiceService>(
+          create: (context) {
+            HttpService httpService =
+                Provider.of<HttpService>(context, listen: false);
+            return VoiceService(httpService);
+          },
+        )
+      ],
+      child: Builder(
+        builder: (context) {
+          ThemeService themeService = Provider.of<ThemeService>(context);
 
-  ThemeData buildAppTheme() {
-  return ThemeData(
-    primaryColor: AppColors.primaryBackground,
-    colorScheme: const ColorScheme.light(
-      primary: AppColors.color4,
-      secondary: AppColors.accentColor1, 
-    ),
-    scaffoldBackgroundColor: AppColors.primaryBackground,
-    buttonTheme: const ButtonThemeData(
-      buttonColor: AppColors.color4,
-      textTheme: ButtonTextTheme.primary, 
-    ),
-    
-  );
+          return MaterialApp(
+            title: 'Flutter Demo',
+            theme: themeService.getTheme(),
+            home: HomeScreen(),
+          );
+        },
+      ),
+    );
+  }
 }
-
-}
-
 
 class AppColors {
   static const color1 = Color(0xFFFFB997);
@@ -55,7 +53,6 @@ class AppColors {
   static const color5 = Color(0xFF74546A);
 
   static const navBarColor = Color.fromARGB(255, 74, 62, 110);
-
 
   static const primaryBackground = Color.fromARGB(255, 153, 136, 211);
   static const secondaryBackground = Color.fromARGB(255, 96, 82, 136);

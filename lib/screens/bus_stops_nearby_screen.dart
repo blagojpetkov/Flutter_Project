@@ -79,7 +79,6 @@ class _BusStopsNearbyScreenState extends State<BusStopsNearbyScreen> {
   Widget build(BuildContext context) {
     HttpService httpService = Provider.of<HttpService>(context);
     final allBusStops = httpService.stops;
-    httpService.setCurrentScreen(AppScreens.BusStopNearby);
     final nearbyBusStops =
         getNearbyBusStops(allBusStops, userLocation[0], userLocation[1]);
 

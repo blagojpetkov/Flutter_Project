@@ -5,6 +5,7 @@ import 'package:postojka/screens/favorite_bus_lines_screen.dart';
 import 'package:postojka/screens/favorite_bus_routes_screen.dart';
 import 'package:postojka/screens/favorite_bus_stops_screen.dart';
 import 'package:postojka/services/http_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 
 class FavoritesTabScreen extends StatefulWidget {
@@ -40,9 +41,11 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final httpService = Provider.of<HttpService>(context);
+    final voiceService = Provider.of<VoiceService>(context, listen: false);
     httpService.setCurrentScreen(AppScreens.Favorites);
-    if (httpService.voiceAssistantMode) {
-      httpService.speak("Успешно го отворивте менито Омилени");
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak("Успешно го отворивте менито Омилени");
+      print("Успешно го отворивте менито Омилени");
     }
   }
 

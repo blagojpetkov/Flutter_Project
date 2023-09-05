@@ -7,6 +7,8 @@ import 'package:postojka/screens/bus_stops_screen.dart';
 import 'package:postojka/screens/map_screen.dart';
 import 'package:postojka/screens/settings_screen.dart';
 import 'package:postojka/services/http_service.dart';
+import 'package:postojka/services/theme_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:postojka/widgets/favorites_tab_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -32,8 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     HttpService httpService = Provider.of<HttpService>(context);
-    httpService.setCurrentScreen(AppScreens.Home);
+    ThemeService themeService = Provider.of<ThemeService>(context);
+    VoiceService voiceService = Provider.of<VoiceService>(context);
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -68,13 +73,13 @@ class _HomeScreenState extends State<HomeScreen> {
           _pages[httpService.currentIndex],
           Align(
             alignment: Alignment.bottomCenter,
-            child: httpService.voiceAssistantButton(context),
+            child: voiceService.voiceAssistantButton(context, AppScreens.Home),
           )
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.color4,
+        selectedItemColor: themeService.isHighContrast ? Colors.white: AppColors.color4,
         unselectedItemColor: AppColors.primaryBackground,
         currentIndex: httpService.currentIndex,
         onTap: (index) {

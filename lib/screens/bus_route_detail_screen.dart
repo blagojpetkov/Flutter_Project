@@ -6,6 +6,8 @@ import 'package:postojka/models/BusStop.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
+import 'package:postojka/services/theme_service.dart';
+import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 
 class BusRouteDetailScreen extends StatefulWidget {
@@ -22,58 +24,57 @@ class BusRouteDetailScreen extends StatefulWidget {
   @override
   _BusRouteDetailScreenState createState() => _BusRouteDetailScreenState();
 }
-class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+
+class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> {
+  bool isFavorite = false;
+
+  _toggleFavoriteStatus() {
+    HttpService httpService = Provider.of<HttpService>(context, listen: false);
+    httpService.toggleFavoriteRoute(widget.route);
+    setState(() {
+      isFavorite = httpService.isRouteFavorite(widget.route);
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     HttpService httpService = Provider.of<HttpService>(context);
-    httpService.setCurrentScreen(AppScreens.BusRouteDetail);
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      final httpService = Provider.of<HttpService>(context, listen: false);
-      httpService.setCurrentScreen(AppScreens.BusRouteDetail);
-      print("Setting current screen in bus route detail");
-    }
-    super.didChangeAppLifecycleState(state);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
-    super.dispose();
+    setState(() {
+      isFavorite = httpService.isRouteFavorite(widget.route);
+    });
   }
 
   List<BusStop> getStopsForRoute() {
-    return widget.allStops.where((stop) => widget.route.stopIds.contains(stop.id)).toList();
+    return widget.allStops
+        .where((stop) => widget.route.stopIds.contains(stop.id))
+        .toList();
   }
 
   String getStopNamesForRouteWithOrder() {
-  return getStopsForRoute().asMap().entries.map((entry) {
-    int idx = entry.key + 1;  // +1 since you want to start from 1, not 0
-    BusStop stop = entry.value;
-    return 'Број $idx, ${stop.name}';
-  }).join(', ');
-}
+    return getStopsForRoute().asMap().entries.map((entry) {
+      int idx = entry.key + 1; // +1 since you want to start from 1, not 0
+      BusStop stop = entry.value;
+      return 'Број $idx, ${stop.name}';
+    }).join(', ');
+  }
 
   @override
   Widget build(BuildContext context) {
     HttpService httpService = Provider.of<HttpService>(context);
+    ThemeService themeService = Provider.of<ThemeService>(context);
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
+
     httpService.setEntityId(widget.route.id);
     var stopsForThisRoute = getStopsForRoute();
-    if (httpService.voiceAssistantMode) {
-    httpService.speak("Успешно го отворивте менито Рута ${widget.route.name}."
-        "Оваа рута се состои од ${stopsForThisRoute.length} постојки."
-        "Должината на оваа рута е ${(widget.route.length / 1000).toStringAsFixed(2)} километри."
-        "Постојки на оваа рута се: ${getStopNamesForRouteWithOrder()}");
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak(
+          "Успешно го отворивте менито Рута ${widget.route.name}."
+          "Оваа рута се состои од ${stopsForThisRoute.length} постојки."
+          "Должината на оваа рута е ${(widget.route.length / 1000).toStringAsFixed(2)} километри."
+          "Постојки на оваа рута се: ${getStopNamesForRouteWithOrder()}");
+      print("Успешно го отворивте менито Рута ${widget.route.name}.");
     }
 
     return Scaffold(
@@ -92,6 +93,21 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with Widget
                         .white70)), // Adjusted font size and color for the line name
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite
+                  ? themeService.isHighContrast
+                      ? Colors.white
+                      : AppColors.primaryBackground
+                  : themeService.isHighContrast
+                      ? AppColors.primaryBackground
+                      : Colors.white,
+            ),
+            onPressed: _toggleFavoriteStatus,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -144,16 +160,18 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with Widget
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: httpService.voiceAssistantButton(context),
+            child: voiceService.voiceAssistantButton(
+                context, AppScreens.BusRouteDetail),
           )
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Action to be performed when FAB is clicked
-          httpService.stopSpeaking();
+          voiceService.stopSpeaking();
         },
         child: Icon(Icons.stop),
+        backgroundColor: AppColors.accentColor1,
       ),
     );
   }

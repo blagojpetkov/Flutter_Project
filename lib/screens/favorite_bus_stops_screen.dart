@@ -14,7 +14,6 @@ class _FavoriteBusStopsScreenState extends State<FavoriteBusStopsScreen> {
   Widget build(BuildContext context) {
     return Consumer<HttpService>(
       builder: (context, httpService, child) {
-        httpService.setCurrentScreen(AppScreens.FavoriteBusStops);
         if (httpService.favoriteStops.isEmpty) {
           // If stops list is empty, show a loading indicator
           // return Center(child: CircularProgressIndicator());
