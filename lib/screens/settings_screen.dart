@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
+import 'package:postojka/screens/camera_screen.dart';
+import 'package:postojka/screens/ocr_result_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/theme_service.dart';
 import 'package:postojka/services/voice_service.dart';
@@ -12,6 +14,10 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final voiceService = Provider.of<VoiceService>(context);
+    if (voiceService.voiceAssistantMode) {
+          voiceService.speak("Успешно го отворивте менито поставки");
+          print("Успешно го отворивте менито поставки");
+        }
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -21,7 +27,8 @@ class SettingsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: voiceService.isListening
                 ? null
-                : () => voiceService.startListening(context, AppScreens.Settings),
+                : () =>
+                    voiceService.startListening(context, AppScreens.Settings),
             child: Text('Start Listening'),
           ),
           SizedBox(height: 10),
@@ -43,14 +50,25 @@ class SettingsScreen extends StatelessWidget {
               toggleValue: voiceService.voiceAssistantMode),
           SwitchListTile(
             title: Text("Висок Контраст"),
-            value:
-                Provider.of<ThemeService>(context, listen: false).isHighContrast,
+            value: Provider.of<ThemeService>(context, listen: false)
+                .isHighContrast,
             onChanged: (value) {
               Provider.of<ThemeService>(context, listen: false).toggleTheme();
             },
             activeColor: Colors.green,
             inactiveThumbColor: Colors.red,
-          )
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CameraScreen(),
+                      ),
+                    );
+                  },
+            child: Text('Camera Text Recognition'),
+          ),
         ],
       ),
     );

@@ -31,7 +31,8 @@
 	<string>We need your location to show nearby bus stops</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>We need your location to show nearby bus stops</string>
-
+	<key>NSCameraUsageDescription</key>
+	<string>We need your camera to scan text</string>
 
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
