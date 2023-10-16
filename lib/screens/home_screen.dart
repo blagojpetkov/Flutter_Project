@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SettingsScreen(),
       ];
 
-  List<String> titles = ["Линии", "Постојки", "Омилени", "Circle", "Square"];
+  List<String> titles = ["Линии", "Постојки", "Омилени", "Мапа", "Поставки"];
 
 
   @override

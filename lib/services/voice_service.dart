@@ -35,7 +35,7 @@ class VoiceService with ChangeNotifier {
   }
 
   Future<void> speak(String text) async {
-    await flutterTts.setSpeechRate(0.4);
+    await flutterTts.setSpeechRate(0.35);
     await flutterTts.speak(text);
   }
 

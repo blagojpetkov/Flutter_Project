@@ -132,7 +132,7 @@ class _BusStopsNearbyScreenState extends State<BusStopsNearbyScreen> {
       List<BusStop> allStops, double userLat, double userLon) {
     return allStops.where((stop) {
       var distance = haversineDistance(userLat, userLon, stop.lat, stop.lon);
-      return distance <= 200;
+      return distance <= 300;
     }).toList();
   }
 }

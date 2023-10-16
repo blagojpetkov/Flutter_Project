@@ -5,6 +5,7 @@ import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/models/BusStop.dart';
 import 'package:postojka/models/BusStopLine.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
+import 'package:postojka/screens/bus_line_map_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/theme_service.dart';
 import 'package:postojka/services/voice_service.dart';
@@ -25,6 +26,11 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
   _toggleFavoriteStatus() {
     HttpService httpService = Provider.of<HttpService>(context, listen: false);
     httpService.toggleFavoriteBusStop(widget.busStop);
+    _checkFavoriteStatus();
+  }
+
+  _checkFavoriteStatus() {
+    HttpService httpService = Provider.of<HttpService>(context, listen: false);
     setState(() {
       isFavorite = httpService.isStopFavorite(widget.busStop);
     });
@@ -39,6 +45,7 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
     super.didChangeDependencies();
     final httpService = Provider.of<HttpService>(context);
     final voiceService = Provider.of<VoiceService>(context, listen: false);
+    _checkFavoriteStatus();
 
     busStopLines = httpService.busStopLines
         .where((line) => line.stopId == widget.busStop.id)
@@ -75,6 +82,30 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
     return arrivals.take(10).map(formatArrival).join(', ');
   }
 
+  void _showBusLineOnMap(int lineId) {
+    HttpService httpService = Provider.of<HttpService>(context, listen: false);
+    final busLine = httpService.lines.firstWhere((line) => line.id == lineId);
+
+    // Get the routes associated with this line
+    final busRoutes = busLine.routeIds
+        .map((routeId) =>
+            httpService.routes.firstWhere((route) => route.id == routeId))
+        .toList();
+
+    // Get the stops associated with these routes
+    final busStops = busRoutes
+        .expand((route) => route.stopIds.map((stopId) =>
+            httpService.stops.firstWhere((stop) => stop.id == stopId)))
+        .toSet()
+        .toList();
+
+    // Pass the stops to a new screen to display them on a map
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => BusLineMapScreen(busStops: busStops)));
+  }
+
   @override
   Widget build(BuildContext context) {
     VoiceService voiceService = Provider.of<VoiceService>(context);
@@ -105,9 +136,13 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
             itemBuilder: (context, index) {
               final arrival = arrivals[index];
 
-              return ListTile(
-                title: Text(arrival.lineName),
-                subtitle: Text("Пристига за ${arrival.timeInMinutes} минути"),
+              return Card(
+                child: ListTile(
+                  onTap: () => _showBusLineOnMap(arrival.lineId),
+                  title: Text(arrival.lineName,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text("Пристига за ${arrival.timeInMinutes} минути"),
+                ),
               );
             },
           ),
@@ -118,13 +153,15 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Action to be performed when FAB is clicked
-          voiceService.stopSpeaking();
-        },
-        child: Icon(Icons.stop),
-      ),
+      floatingActionButton: voiceService.voiceAssistantMode
+          ? FloatingActionButton(
+              onPressed: () {
+                // Action to be performed when FAB is clicked
+                voiceService.stopSpeaking();
+              },
+              child: Icon(Icons.stop),
+            )
+          : null,
     );
   }
 }

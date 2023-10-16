@@ -19,8 +19,7 @@ class BusStop {
     required this.note,
   });
 
-
- // Empty constructor
+  // Empty constructor
   BusStop.empty()
       : id = 0,
         areaId = 0,
@@ -30,7 +29,7 @@ class BusStop {
         lat = 0.0,
         lon = 0.0,
         note = '';
-        
+
   factory BusStop.fromJson(Map<String, dynamic> json) {
     return BusStop(
       id: json['id'],
@@ -43,6 +42,17 @@ class BusStop {
       note: json['note'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'areaId': areaId,
+        'number': number,
+        'name': name,
+        'translations': translations,
+        'lat': lat,
+        'lon': lon,
+        'note': note,
+      };
 
   @override
   String toString() {

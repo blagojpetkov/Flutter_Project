@@ -8,14 +8,12 @@ import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'dart:convert';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/BusLine.dart';
 import '../models/BusRoute.dart';
 import '../models/BusStop.dart';
 
-
 class HttpService with ChangeNotifier {
-
   final String baseUrl = 'http://info.skopska.mk:8080';
   final String tokenHeaderKey = "Eurogps.Eu.Sid";
   String? token;
@@ -29,39 +27,33 @@ class HttpService with ChangeNotifier {
   //Used to execute the fetchToken method every X seconds
   Timer? _timer;
 
-  
   AppScreens currentScreen = AppScreens.BusLines;
 
   void setCurrentScreen(AppScreens screen) {
     currentScreen = screen;
     print("Current screen is " + currentScreen.toString());
   }
-  
+
   int currentIndex = 0;
   void setCurrentIndex(int index) {
     currentIndex = index;
     notifyListeners();
   }
 
-
   List<BusStop> getStopsForRoute() {
     BusRoute route = routes.firstWhere((route) => route.id == entityId);
     return stops.where((stop) => route.stopIds.contains(stop.id)).toList();
   }
+
   List<BusRoute> getRoutesForLine() {
     BusLine line = lines.firstWhere((line) => line.id == entityId);
     return line.routeIds.map((routeId) => findRouteById(routeId)).toList();
   }
 
   BusLine getLineForRoute(BusRoute route) {
-    return lines.firstWhere((line) => line.id == route.lineId, orElse: () => BusLine.empty());
+    return lines.firstWhere((line) => line.id == route.lineId,
+        orElse: () => BusLine.empty());
   }
-
-  
-
-
-
-  
 
   HttpService() {
     fetchToken();
@@ -69,6 +61,7 @@ class HttpService with ChangeNotifier {
       print("EXECUTED TIMER");
       fetchBusStopLines();
     });
+    loadFavorites();
   }
 
   @override
@@ -85,6 +78,40 @@ class HttpService with ChangeNotifier {
   List<BusRoute> favoriteRoutes = [];
   List<BusLine> favoriteLines = [];
   List<BusStop> favoriteStops = [];
+
+  saveFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String favoriteRoutesString = jsonEncode(favoriteRoutes);
+    String favoriteLinesString = jsonEncode(favoriteLines);
+    String favoriteStopsString = jsonEncode(favoriteStops);
+    await prefs.setString('favoriteRoutes', favoriteRoutesString);
+    await prefs.setString('favoriteLines', favoriteLinesString);
+    await prefs.setString('favoriteStops', favoriteStopsString);
+  }
+
+  loadFavorites() async {
+    print("Loading all favorites");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? favoriteRoutesString = prefs.getString('favoriteRoutes');
+    String? favoriteLinesString = prefs.getString('favoriteLines');
+    String? favoriteStopsString = prefs.getString('favoriteStops');
+    if (favoriteRoutesString != null) {
+      favoriteRoutes = (jsonDecode(favoriteRoutesString) as List)
+          .map((item) => BusRoute.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    if (favoriteLinesString != null) {
+      favoriteLines = (jsonDecode(favoriteLinesString) as List)
+          .map((item) => BusLine.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    if (favoriteStopsString != null) {
+      favoriteStops = (jsonDecode(favoriteStopsString) as List)
+          .map((item) => BusStop.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    notifyListeners();
+  }
 
   // Check if a line is a favorite
   bool isLineFavorite(BusLine line) {
@@ -108,6 +135,7 @@ class HttpService with ChangeNotifier {
     } else {
       addFavoriteLine(line);
     }
+    saveFavorites();
   }
 
   // Toggle the favorite status of a route
@@ -117,6 +145,7 @@ class HttpService with ChangeNotifier {
     } else {
       addFavoriteRoute(route);
     }
+    saveFavorites();
   }
 
   // Toggle the favorite status of a line
@@ -126,6 +155,7 @@ class HttpService with ChangeNotifier {
     } else {
       addFavoriteStop(stop);
     }
+    saveFavorites();
   }
 
   // Add a favorite route

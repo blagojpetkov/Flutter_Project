@@ -165,14 +165,14 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> {
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: voiceService.voiceAssistantMode ? FloatingActionButton(
         onPressed: () {
           // Action to be performed when FAB is clicked
           voiceService.stopSpeaking();
         },
         child: Icon(Icons.stop),
         backgroundColor: AppColors.accentColor1,
-      ),
+      ) : null,
     );
   }
 }

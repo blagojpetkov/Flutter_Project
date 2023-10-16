@@ -18,7 +18,7 @@ class BusLine {
     required this.type,
     required this.carrier,
   });
-  
+
   // Empty constructor
   BusLine.empty()
       : id = 0,
@@ -42,6 +42,17 @@ class BusLine {
       carrier: json['carrier'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'kind': kind,
+        'number': number,
+        'name': name,
+        'nightly': nightly,
+        'routeIds': routeIds,
+        'type': type,
+        'carrier': carrier,
+      };
 
   @override
   String toString() {

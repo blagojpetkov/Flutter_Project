@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/camera_screen.dart';
 import 'package:postojka/screens/ocr_result_screen.dart';
+import 'package:postojka/screens/weather_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/theme_service.dart';
 import 'package:postojka/services/voice_service.dart';
@@ -68,6 +69,17 @@ class SettingsScreen extends StatelessWidget {
                     );
                   },
             child: Text('Camera Text Recognition'),
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => WeatherScreen(),
+                      ),
+                    );
+                  },
+            child: Text('Weather'),
           ),
         ],
       ),

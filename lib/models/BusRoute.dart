@@ -26,7 +26,7 @@ class BusRoute {
   });
 
   BusRoute.empty()
-      : id = -1,  // Indicates an invalid ID
+      : id = -1, // Indicates an invalid ID
         lineId = -1,
         direction = '',
         directionTranslations = {},
@@ -54,6 +54,20 @@ class BusRoute {
       stopOffsets: List<int>.from(json['stopOffsets']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'lineId': lineId,
+        'direction': direction,
+        'directionTranslations': directionTranslations,
+        'name': name,
+        'nameTranslations': nameTranslations,
+        'begin': begin,
+        'end': end,
+        'length': length,
+        'stopIds': stopIds,
+        'stopOffsets': stopOffsets,
+      };
 
   @override
   String toString() {
