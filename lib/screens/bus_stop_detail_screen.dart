@@ -20,8 +20,34 @@ class BusStopDetailScreen extends StatefulWidget {
   _BusStopDetailsScreenState createState() => _BusStopDetailsScreenState();
 }
 
-class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
+class _BusStopDetailsScreenState extends State<BusStopDetailScreen> with RouteAware {
   bool isFavorite = false;
+
+  void speak(){
+    final voiceService = Provider.of<VoiceService>(context, listen: false);
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak(
+          "Успешно ја отворивте постојката со име ${widget.busStop.name} со број ${widget.busStop.number}"
+          "Линии кои пристигаат на оваа постојка наскоро се:"
+          "${getAllArrivalsAsString()}");
+      print(
+          "Успешно ја отворивте постојката со име ${widget.busStop.name} со број ${widget.busStop.number}");
+    }
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // This will be called when the user comes back to this screen from another screen
+    if (!mounted) return;
+    speak();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
 
   _toggleFavoriteStatus() {
     HttpService httpService = Provider.of<HttpService>(context, listen: false);
@@ -43,8 +69,8 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
     final httpService = Provider.of<HttpService>(context);
-    final voiceService = Provider.of<VoiceService>(context, listen: false);
     _checkFavoriteStatus();
 
     busStopLines = httpService.busStopLines
@@ -64,14 +90,8 @@ class _BusStopDetailsScreenState extends State<BusStopDetailScreen> {
     }).toList();
 
     arrivals.sort((a, b) => a.timeInMinutes.compareTo(b.timeInMinutes));
-    if (voiceService.voiceAssistantMode) {
-      voiceService.speak(
-          "Успешно ја отворивте постојката со име ${widget.busStop.name} со број ${widget.busStop.number}"
-          "Линии кои пристигаат на оваа постојка наскоро се:"
-          "${getAllArrivalsAsString()}");
-      print(
-          "Успешно ја отворивте постојката со име ${widget.busStop.name} со број ${widget.busStop.number}");
-    }
+    speak();
+    
   }
 
   String formatArrival(Arrival arrival) {

@@ -1,15 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
+
 class BusLinesScreen extends StatefulWidget {
   @override
   _LinesScreenState createState() => _LinesScreenState();
 }
 
-class _LinesScreenState extends State<BusLinesScreen> {
+class _LinesScreenState extends State<BusLinesScreen> with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // This will be called when the user comes back to this screen from another screen
+
+    if (!mounted) return;
+    speak();
+  }
+
+  void speak() {
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
+
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak("Успешно го отворивте менито линии");
+      print("Успешно го отворивте менито линии");
+    }
+  }
+
   TextEditingController _searchController = TextEditingController();
 
   // This function will filter the lines based on the search query
@@ -25,16 +52,12 @@ class _LinesScreenState extends State<BusLinesScreen> {
   @override
   Widget build(BuildContext context) {
     HttpService httpService = Provider.of<HttpService>(context);
-    VoiceService voiceService = Provider.of<VoiceService>(context, listen: false);
-
-    if (voiceService.voiceAssistantMode) {
-      voiceService.speak("Успешно го отворивте менито линии");
-      print("Успешно го отворивте менито линии");
-    }
+    speak();
     if (httpService.lines.isEmpty) {
       return Center(child: CircularProgressIndicator());
     } else {
-      List<BusLine> filteredLines = _filterLines(httpService.lines, _searchController.text);
+      List<BusLine> filteredLines =
+          _filterLines(httpService.lines, _searchController.text);
 
       return Column(
         children: [
@@ -82,6 +105,7 @@ class _LinesScreenState extends State<BusLinesScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    routeObserver.unsubscribe(this);
     super.dispose();
   }
 }

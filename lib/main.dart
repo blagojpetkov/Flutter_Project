@@ -5,6 +5,8 @@ import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 import 'services/http_service.dart';
 
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() {
   runApp(const MyApp());
 }
@@ -38,6 +40,7 @@ class MyApp extends StatelessWidget {
             title: 'Flutter Demo',
             theme: themeService.getTheme(),
             home: HomeScreen(),
+            navigatorObservers: [routeObserver],
           );
         },
       ),

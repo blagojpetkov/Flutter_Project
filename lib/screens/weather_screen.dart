@@ -46,9 +46,22 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text(
-                      'Temperature: ${_weather!.temperature!.celsius!.toStringAsFixed(1)} °C'),
+                      'Temperature: ${_weather!.temperature!.celsius!.toStringAsFixed(1)} °C',
+                      style: TextStyle(fontSize: 20),
+                      ),
                   SizedBox(height: 20),
-                  Text('Condition: ${_weather!.weatherDescription}'),
+                  Text('Condition: ${_weather!.weatherDescription}',
+                  style: TextStyle(fontSize: 20),),
+                  SizedBox(height: 20),
+                  Text(
+                    'Humidity: ${_weather!.humidity}%',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Wind Speed: ${_weather!.windSpeed} m/s',
+                    style: TextStyle(fontSize: 20),
+                  ),
                 ],
               ),
             ),

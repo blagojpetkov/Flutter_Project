@@ -18,17 +18,53 @@ class BusLineDetailScreen extends StatefulWidget {
   _BusLineDetailScreenState createState() => _BusLineDetailScreenState();
 }
 
-class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
+class _BusLineDetailScreenState extends State<BusLineDetailScreen>
+    with RouteAware {
   bool isFavorite = false;
 
-  String getAllRouteNamesWithOrder() {
-  List<String> routeDetails = [];
-  for (int i = 0; i < widget.line.routeIds.length; i++) {
-    final route = widget.httpService.findRouteById(widget.line.routeIds[i]);
-      routeDetails.add('Број ${i + 1}, ${route.name}');
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
-  return routeDetails.join(', ');  // This joins all route details into a single string separated by commas.
-}
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // This will be called when the user comes back to this screen from another screen
+    if (!mounted) return;
+    speak();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  void speak() {
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
+
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak(
+          "Успешно го отворивте менито Линија ${widget.line.number}."
+          "Оваа линија е од ${widget.line.type == 'URBAN' ? 'Градски' : 'Друг'} тип."
+          "Оператор на оваа линија е ${widget.line.carrier}."
+          "Рути на оваа линија се: ${getAllRouteNamesWithOrder()}");
+      print("Успешно го отворивте менито Линија ${widget.line.number}");
+    }
+  }
+
+  String getAllRouteNamesWithOrder() {
+    List<String> routeDetails = [];
+    for (int i = 0; i < widget.line.routeIds.length; i++) {
+      final route = widget.httpService.findRouteById(widget.line.routeIds[i]);
+      routeDetails.add('Број ${i + 1}, ${route.name}');
+    }
+    return routeDetails.join(
+        ', '); // This joins all route details into a single string separated by commas.
+  }
 
   @override
   void initState() {
@@ -50,16 +86,10 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
   @override
   Widget build(BuildContext context) {
     ThemeService themeService = Provider.of<ThemeService>(context);
-    VoiceService voiceService = Provider.of<VoiceService>(context, listen: false);
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
     widget.httpService.setEntityId(widget.line.id);
-    if (voiceService.voiceAssistantMode) {
-      voiceService.speak(
-          "Успешно го отворивте менито Линија ${widget.line.number}."
-          "Оваа линија е од ${widget.line.type == 'URBAN' ? 'Градски' : 'Друг'} тип."
-          "Оператор на оваа линија е ${widget.line.carrier}."
-          "Рути на оваа линија се: ${getAllRouteNamesWithOrder()}");
-          print("Успешно го отворивте менито Линија ${widget.line.number}");
-    }
+    speak();
     return Scaffold(
       appBar: AppBar(
         title: Text('Детали за Линија ${widget.line.number}'),
@@ -68,7 +98,13 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
           IconButton(
             icon: Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? themeService.isHighContrast ? Colors.white: AppColors.color4 : themeService.isHighContrast ? AppColors.color4 : Colors.white,
+              color: isFavorite
+                  ? themeService.isHighContrast
+                      ? Colors.white
+                      : AppColors.color4
+                  : themeService.isHighContrast
+                      ? AppColors.color4
+                      : Colors.white,
             ),
             onPressed: _toggleFavoriteStatus,
           ),
@@ -87,7 +123,9 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: themeService.isHighContrast ? Colors.white: AppColors.color4,
+                      color: themeService.isHighContrast
+                          ? Colors.white
+                          : AppColors.color4,
                     ),
                   ),
                 ),
@@ -114,7 +152,9 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: themeService.isHighContrast ? Colors.white: AppColors.color4,
+                      color: themeService.isHighContrast
+                          ? Colors.white
+                          : AppColors.color4,
                     ),
                   ),
                 ),
@@ -150,7 +190,8 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: voiceService.voiceAssistantButton(context, AppScreens.BusLineDetail),
+            child: voiceService.voiceAssistantButton(
+                context, AppScreens.BusLineDetail),
           )
         ],
       ),

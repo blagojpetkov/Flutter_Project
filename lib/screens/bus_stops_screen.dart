@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/BusStop.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart'; // Ensure this import exists.
@@ -11,7 +12,33 @@ class BusStopsScreen extends StatefulWidget {
   _BusStopsScreenState createState() => _BusStopsScreenState();
 }
 
-class _BusStopsScreenState extends State<BusStopsScreen> {
+class _BusStopsScreenState extends State<BusStopsScreen> with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // This will be called when the user comes back to this screen from another screen
+
+    if (!mounted) return;
+
+    speak();
+  }
+
+  void speak() {
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
+
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak("Успешно го отворивте менито постојки");
+      print("Успешно го отворивте менито постојки");
+    }
+  }
+
   TextEditingController _searchController = TextEditingController();
 
   // This function will filter the stops based on the search query
@@ -27,16 +54,14 @@ class _BusStopsScreenState extends State<BusStopsScreen> {
   @override
   Widget build(BuildContext context) {
     HttpService httpService = Provider.of<HttpService>(context, listen: false);
-    VoiceService voiceService = Provider.of<VoiceService>(context, listen: false);
 
-    if (voiceService.voiceAssistantMode) {
-      voiceService.speak("Успешно го отворивте менито постојки");
-      print("Успешно го отворивте менито постојки");
-    }
+    speak();
+
     if (httpService.stops.isEmpty) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     } else {
-      List<BusStop> filteredStops = _filterStops(httpService.stops, _searchController.text);
+      List<BusStop> filteredStops =
+          _filterStops(httpService.stops, _searchController.text);
 
       return Column(
         children: [
@@ -44,7 +69,7 @@ class _BusStopsScreenState extends State<BusStopsScreen> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Пребарувај постојки',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
@@ -83,6 +108,7 @@ class _BusStopsScreenState extends State<BusStopsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    routeObserver.unsubscribe(this);
     super.dispose();
   }
 }

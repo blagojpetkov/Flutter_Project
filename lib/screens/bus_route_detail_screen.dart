@@ -25,9 +25,37 @@ class BusRouteDetailScreen extends StatefulWidget {
   _BusRouteDetailScreenState createState() => _BusRouteDetailScreenState();
 }
 
-class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> {
+class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteAware{
   bool isFavorite = false;
 
+  void speak(){
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
+
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak(
+          "Успешно го отворивте менито Рута ${widget.route.name}."
+          "Оваа рута се состои од ${getStopsForRoute().length} постојки."
+          "Должината на оваа рута е ${(widget.route.length / 1000).toStringAsFixed(2)} километри."
+          "Постојки на оваа рута се: ${getStopNamesForRouteWithOrder()}");
+      print("Успешно го отворивте менито Рута ${widget.route.name}.");
+    }
+  }
+
+   @override
+  void didPopNext() {
+    super.didPopNext();
+    // This will be called when the user comes back to this screen from another screen
+    if (!mounted) return;
+    speak();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+  
   _toggleFavoriteStatus() {
     HttpService httpService = Provider.of<HttpService>(context, listen: false);
     httpService.toggleFavoriteRoute(widget.route);
@@ -43,6 +71,7 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> {
     setState(() {
       isFavorite = httpService.isRouteFavorite(widget.route);
     });
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
 
   List<BusStop> getStopsForRoute() {
@@ -68,14 +97,7 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> {
 
     httpService.setEntityId(widget.route.id);
     var stopsForThisRoute = getStopsForRoute();
-    if (voiceService.voiceAssistantMode) {
-      voiceService.speak(
-          "Успешно го отворивте менито Рута ${widget.route.name}."
-          "Оваа рута се состои од ${stopsForThisRoute.length} постојки."
-          "Должината на оваа рута е ${(widget.route.length / 1000).toStringAsFixed(2)} километри."
-          "Постојки на оваа рута се: ${getStopNamesForRouteWithOrder()}");
-      print("Успешно го отворивте менито Рута ${widget.route.name}.");
-    }
+    speak();
 
     return Scaffold(
       appBar: AppBar(

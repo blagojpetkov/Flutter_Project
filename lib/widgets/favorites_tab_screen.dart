@@ -14,7 +14,7 @@ class FavoritesTabScreen extends StatefulWidget {
 }
 
 class _FavoritesTabScreenState extends State<FavoritesTabScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   int _favoriteTabIndex = 0;
   TabController? _tabController;
 
@@ -23,6 +23,35 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
     FavoriteBusStopsScreen(),
     FavoriteBusRoutesScreen(),
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+    final httpService = Provider.of<HttpService>(context);
+    httpService.setCurrentScreen(AppScreens.Favorites);
+
+    speak();
+  }
+
+  void speak() {
+    VoiceService voiceService =
+        Provider.of<VoiceService>(context, listen: false);
+
+    if (voiceService.voiceAssistantMode) {
+      voiceService.speak("Успешно го отворивте менито Омилени");
+      print("Успешно го отворивте менито Омилени");
+    }
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // This will be called when the user comes back to this screen from another screen
+
+    if (!mounted) return;
+    speak();
+  }
 
   @override
   void initState() {
@@ -38,20 +67,9 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final httpService = Provider.of<HttpService>(context);
-    final voiceService = Provider.of<VoiceService>(context, listen: false);
-    httpService.setCurrentScreen(AppScreens.Favorites);
-    if (voiceService.voiceAssistantMode) {
-      voiceService.speak("Успешно го отворивте менито Омилени");
-      print("Успешно го отворивте менито Омилени");
-    }
-  }
-
-  @override
   void dispose() {
     _tabController!.dispose();
+    routeObserver.unsubscribe(this);
     super.dispose();
   }
 
@@ -63,9 +81,7 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
           color: AppColors.secondaryBackground,
           child: TabBar(
             controller: _tabController,
-            indicatorColor: Theme.of(context)
-                .colorScheme
-                .secondary,
+            indicatorColor: Theme.of(context).colorScheme.secondary,
             tabs: [
               Tab(text: 'Линии'),
               Tab(text: 'Постојки'),
