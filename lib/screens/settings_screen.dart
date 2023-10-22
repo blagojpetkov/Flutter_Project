@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
+import 'package:postojka/screens/bus_alarm_screen.dart';
 import 'package:postojka/screens/camera_screen.dart';
 import 'package:postojka/screens/ocr_result_screen.dart';
 import 'package:postojka/screens/weather_screen.dart';
@@ -80,6 +81,17 @@ class SettingsScreen extends StatelessWidget {
                     );
                   },
             child: Text('Weather'),
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => BusAlarmScreen(),
+                      ),
+                    );
+                  },
+            child: Text('Alarm'),
           ),
         ],
       ),

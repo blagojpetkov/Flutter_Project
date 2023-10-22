@@ -23,6 +23,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     enableLocationService();
     _timer = Timer.periodic(Duration(seconds: 30), (timer) async {
+      print("Updating user location with timer");
       await getLocationUpdate();
     });
     super.initState();
