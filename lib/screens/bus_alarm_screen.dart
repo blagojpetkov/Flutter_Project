@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:postojka/models/Alarm.dart';
 import 'package:postojka/models/Arrival.dart';
 import 'package:postojka/models/BusStopLine.dart';
 import 'package:postojka/services/http_service.dart';
@@ -11,21 +14,25 @@ class BusAlarmScreen extends StatefulWidget {
 }
 
 class _BusAlarmScreenState extends State<BusAlarmScreen> {
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  Timer? _timer;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   final TextEditingController timeController = TextEditingController();
   int? selectedBusStopId;
   int? selectedLineId;
   List<Arrival> arrivals = [];
   List<BusStopLine> busStopLines = [];
+  Alarm? currentAlarm;
 
   @override
   void initState() {
     super.initState();
-    var initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-    var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    var initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    var initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +49,15 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
             Container(
               width: dropdownWidth,
               child: DropdownButton<int>(
-                hint: Text('Select Bus Stop'),
+                hint: const Text('Select Bus Stop'),
                 value: selectedBusStopId,
                 items: busStopsDropdownItems(),
                 onChanged: (int? value) {
                   setState(() {
                     selectedBusStopId = value;
                     selectedLineId = null; // Clear previously selected line
-                    updateLinesDropdown(selectedBusStopId);
+                    fetchBusStopLinesAndArrivals();
+                    // updateLinesDropdown(selectedBusStopId);
                   });
                 },
                 isExpanded: true,
@@ -59,7 +67,7 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
             Container(
               width: dropdownWidth,
               child: DropdownButton<int>(
-                hint: Text('Select Bus Line'),
+                hint: const Text('Select Bus Line'),
                 value: selectedLineId,
                 items: linesDropdownItems(),
                 onChanged: (int? value) {
@@ -83,6 +91,8 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
               },
               child: Text('Set Alarm'),
             ),
+            const SizedBox(height: 20),
+            _buildAlarmInfo(),
           ],
         ),
       ),
@@ -99,25 +109,30 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
     }).toList();
   }
 
-   void updateLinesDropdown(int? busStopId) {
-    if (busStopId == null) return;
+  // void updateLinesDropdown(int? busStopId) {
+  //   if (busStopId == null) return;
+  //   final httpService = Provider.of<HttpService>(context, listen: false);
+  //   busStopLines = httpService.busStopLines
+  //       .where((line) => line.stopId == busStopId)
+  //       .toList();
+  // }
+
+  void fetchBusStopLinesAndArrivals() {
+    if (selectedBusStopId == null) return;
+    print("Fetching arrivals in bus alarm screen");
     final httpService = Provider.of<HttpService>(context, listen: false);
+
     busStopLines = httpService.busStopLines
-        .where((line) => line.stopId == busStopId)
+        .where((line) => line.stopId == selectedBusStopId)
         .toList();
 
-  }
-
-  void fetchArrivals(){
-    final httpService = Provider.of<HttpService>(context, listen: false);
     arrivals = busStopLines.expand((line) {
       return line.remainingTime.map((time) => Arrival(
           lineId: line.lineId,
           timeInMinutes: (time / 60).round(),
           lineName: httpService.lines
               .firstWhere((busLine) => busLine.id == line.lineId)
-              .name
-          ));
+              .name));
     }).toList();
   }
 
@@ -125,12 +140,12 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
     final httpService = Provider.of<HttpService>(context, listen: false);
 
     // Extract unique line IDs first
-    final uniqueLineIds = busStopLines.map((line) => line.lineId).toSet().toList();
+    final uniqueLineIds =
+        busStopLines.map((line) => line.lineId).toSet().toList();
 
     return uniqueLineIds.map((lineId) {
       final busLine = httpService.lines.firstWhere((l) => l.id == lineId);
-      final lineName =
-          busLine.name;
+      final lineName = busLine.name;
 
       return DropdownMenuItem(
         child: Text(lineName),
@@ -139,19 +154,60 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
     }).toList();
   }
 
+  Widget _buildAlarmInfo() {
+    if (currentAlarm == null) return Container();
+
+    final busStopName = Provider.of<HttpService>(context, listen: false)
+        .stops
+        .firstWhere((stop) => stop.id == currentAlarm!.busStopId)
+        .name;
+    final lineName = Provider.of<HttpService>(context, listen: false)
+        .lines
+        .firstWhere((line) => line.id == currentAlarm!.lineId)
+        .name;
+
+    return Column(
+      children: [
+        Text('Alarm Info:'),
+        Text('Bus Stop: $busStopName'),
+        Text('Line: $lineName'),
+        Text('Time: ${currentAlarm!.timeInMinutes} minutes')
+      ],
+    );
+  }
+
   void setAlarm(int minutes) {
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+
+    checkIfShouldSendNotification(minutes);
+    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+      checkIfShouldSendNotification(minutes);
+    });
+
+    currentAlarm = Alarm(
+        busStopId: selectedBusStopId!,
+        lineId: selectedLineId!,
+        timeInMinutes: minutes);
+    setState(() {});
+  }
+
+  void checkIfShouldSendNotification(int minutes) {
+    fetchBusStopLinesAndArrivals();
+
     var alarmArrivals = arrivals.where((arrival) =>
         arrival.lineId == selectedLineId &&
         (arrival.timeInMinutes <= minutes &&
-            arrival.timeInMinutes >=
-                minutes - 5));
+            arrival.timeInMinutes >= minutes - 5));
 
     if (alarmArrivals.isNotEmpty) {
-      // Sending a local notification
       print("Calling send notification");
       _sendNotification();
-    }
-    else{
+      if (_timer != null) {
+        _timer?.cancel();
+      }
+    } else {
       print("Not sending notification");
     }
   }
@@ -164,12 +220,21 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
       importance: Importance.max,
       priority: Priority.high,
     );
-    var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    var platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(
       0, // Notification ID
       'Bus Arrival Alert',
       'The bus is about to arrive!',
       platformChannelSpecifics,
     );
+  }
+
+  @override
+  void dispose() {
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+    super.dispose();
   }
 }

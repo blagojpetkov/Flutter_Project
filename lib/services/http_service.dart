@@ -57,9 +57,10 @@ class HttpService with ChangeNotifier {
 
   HttpService() {
     fetchToken();
-    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
       print("EXECUTED TIMER");
-      fetchBusStopLines();
+      busStopLines = await fetchBusStopLines();
+      // notifyListeners();
     });
     loadFavorites();
   }
