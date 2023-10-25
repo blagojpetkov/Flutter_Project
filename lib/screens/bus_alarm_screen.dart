@@ -7,6 +7,7 @@ import 'package:postojka/models/BusStopLine.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 
 class BusAlarmScreen extends StatefulWidget {
   @override
@@ -22,7 +23,7 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
   int? selectedLineId;
   List<Arrival> arrivals = [];
   List<BusStopLine> busStopLines = [];
-  Alarm? currentAlarm;
+  List<Alarm> alarms = [];
 
   @override
   void initState() {
@@ -36,7 +37,6 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final httpService = Provider.of<HttpService>(context);
     double dropdownWidth =
         MediaQuery.of(context).size.width * 0.8; // 80% of screen width
 
@@ -56,7 +56,7 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
                   setState(() {
                     selectedBusStopId = value;
                     selectedLineId = null; // Clear previously selected line
-                    fetchBusStopLinesAndArrivals();
+                    fetchBusStopLinesAndArrivalsForBusStop(selectedBusStopId!);
                     // updateLinesDropdown(selectedBusStopId);
                   });
                 },
@@ -109,32 +109,27 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
     }).toList();
   }
 
-  // void updateLinesDropdown(int? busStopId) {
-  //   if (busStopId == null) return;
-  //   final httpService = Provider.of<HttpService>(context, listen: false);
-  //   busStopLines = httpService.busStopLines
-  //       .where((line) => line.stopId == busStopId)
-  //       .toList();
-  // }
+  List<Arrival> fetchBusStopLinesAndArrivalsForBusStop(int busStopId) {
+  print("Fetching arrivals in bus alarm screen");
+  final httpService = Provider.of<HttpService>(context, listen: false);
 
-  void fetchBusStopLinesAndArrivals() {
-    if (selectedBusStopId == null) return;
-    print("Fetching arrivals in bus alarm screen");
-    final httpService = Provider.of<HttpService>(context, listen: false);
+  var currentBusStopLines = httpService.busStopLines
+      .where((line) => line.stopId == busStopId)
+      .toList();
 
-    busStopLines = httpService.busStopLines
-        .where((line) => line.stopId == selectedBusStopId)
-        .toList();
+  busStopLines = currentBusStopLines; // Needed to populate the bus line dropdown
 
-    arrivals = busStopLines.expand((line) {
-      return line.remainingTime.map((time) => Arrival(
-          lineId: line.lineId,
-          timeInMinutes: (time / 60).round(),
-          lineName: httpService.lines
-              .firstWhere((busLine) => busLine.id == line.lineId)
-              .name));
-    }).toList();
-  }
+  var currentArrivals = currentBusStopLines.expand((line) {
+    return line.remainingTime.map((time) => Arrival(
+        lineId: line.lineId,
+        timeInMinutes: (time / 60).round(),
+        lineName: httpService.lines
+            .firstWhere((busLine) => busLine.id == line.lineId)
+            .name));
+  }).toList();
+
+  return currentArrivals;
+}
 
   List<DropdownMenuItem<int>> linesDropdownItems() {
     final httpService = Provider.of<HttpService>(context, listen: false);
@@ -155,24 +150,38 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
   }
 
   Widget _buildAlarmInfo() {
-    if (currentAlarm == null) return Container();
+    if (alarms.isEmpty) return Container();
 
-    final busStopName = Provider.of<HttpService>(context, listen: false)
-        .stops
-        .firstWhere((stop) => stop.id == currentAlarm!.busStopId)
-        .name;
-    final lineName = Provider.of<HttpService>(context, listen: false)
-        .lines
-        .firstWhere((line) => line.id == currentAlarm!.lineId)
-        .name;
+    return Expanded(
+      child: ListView.builder(
+        itemCount: alarms.length,
+        itemBuilder: (context, index) {
+          final alarm = alarms[index];
+          final busStopName = Provider.of<HttpService>(context, listen: false)
+              .stops
+              .firstWhere((stop) => stop.id == alarm.busStopId)
+              .name;
+          final lineName = Provider.of<HttpService>(context, listen: false)
+              .lines
+              .firstWhere((line) => line.id == alarm.lineId)
+              .name;
 
-    return Column(
-      children: [
-        Text('Alarm Info:'),
-        Text('Bus Stop: $busStopName'),
-        Text('Line: $lineName'),
-        Text('Time: ${currentAlarm!.timeInMinutes} minutes')
-      ],
+          return Card(
+            child: ListTile(
+              title: Text(
+                  'Alarm for bus line: $lineName at stop: $busStopName in ${alarm.timeInMinutes} minutes'),
+              trailing: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  setState(() {
+                    alarms.removeAt(index);
+                  });
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -182,37 +191,49 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
     }
 
     checkIfShouldSendNotification(minutes);
-    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       checkIfShouldSendNotification(minutes);
     });
 
-    currentAlarm = Alarm(
+    alarms.add(Alarm(
         busStopId: selectedBusStopId!,
         lineId: selectedLineId!,
-        timeInMinutes: minutes);
+        timeInMinutes: minutes));
+
     setState(() {});
   }
 
   void checkIfShouldSendNotification(int minutes) {
-    fetchBusStopLinesAndArrivals();
-
-    var alarmArrivals = arrivals.where((arrival) =>
-        arrival.lineId == selectedLineId &&
-        (arrival.timeInMinutes <= minutes &&
-            arrival.timeInMinutes >= minutes - 5));
+  for (var alarm in alarms) {
+    var currentArrivals = fetchBusStopLinesAndArrivalsForBusStop(alarm.busStopId);
+    
+    var alarmArrivals = currentArrivals.where((arrival) =>
+        arrival.lineId == alarm.lineId &&
+        (arrival.timeInMinutes <= alarm.timeInMinutes &&
+            arrival.timeInMinutes >= alarm.timeInMinutes - 5));
 
     if (alarmArrivals.isNotEmpty) {
-      print("Calling send notification");
-      _sendNotification();
-      if (_timer != null) {
-        _timer?.cancel();
-      }
+      var lineName = Provider.of<HttpService>(context, listen: false)
+          .lines
+          .firstWhere((line) => line.id == alarm.lineId)
+          .name;
+
+      var stopName = Provider.of<HttpService>(context, listen: false)
+          .stops
+          .firstWhere((stop) => stop.id == alarm.busStopId)
+          .name;
+      print(
+          "Calling send notification for alarm with lineId: ${alarm.lineId}");
+      _sendNotification(lineName, stopName);
+      alarms.remove(alarm);
+      break; // If found an alarm that satisfies the condition, break out of the loop.
     } else {
-      print("Not sending notification");
+      print("Not sending notification for alarm with lineId: ${alarm.lineId}");
     }
   }
+}
 
-  void _sendNotification() async {
+  void _sendNotification(String lineName, String stopName) async {
     var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
       'bus_alarm_channel_id',
       'Bus Alarm',
@@ -224,8 +245,8 @@ class _BusAlarmScreenState extends State<BusAlarmScreen> {
         NotificationDetails(android: androidPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(
       0, // Notification ID
-      'Bus Arrival Alert',
-      'The bus is about to arrive!',
+      'Bus Arrival Alert for $lineName',
+      'The bus will arrive at $stopName soon!',
       platformChannelSpecifics,
     );
   }
