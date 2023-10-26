@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -237,59 +238,129 @@ class HttpService with ChangeNotifier {
   }
 
   Future<List<BusRoute>> fetchRoutes() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/rest-its/scheme/routes'),
-      headers: {
-        "Content-Type": "application/json",
-        tokenHeaderKey: token ?? ""
-      },
-    );
-    final parsed = json.decode(response.body).cast<Map<String, dynamic>>();
-    return parsed.map<BusRoute>((json) => BusRoute.fromJson(json)).toList();
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/rest-its/scheme/routes'),
+        headers: {
+          "Content-Type": "application/json",
+          tokenHeaderKey: token ?? ""
+        },
+      ).timeout(Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> parsedList = json.decode(response.body);
+        return parsedList
+            .map<BusRoute>((json) => BusRoute.fromJson(json))
+            .toList();
+      } else {
+        throw Exception(
+            'Failed to fetch BusRoutes with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        throw Exception('Request timed out. Please try again.');
+      } else if (e is SocketException) {
+        throw Exception('Network issue. Please check your connection.');
+      }
+      rethrow;
+    }
   }
 
   Future<List<BusLine>> fetchLines() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/rest-its/scheme/lines'),
-      headers: {
-        "Content-Type": "application/json",
-        tokenHeaderKey: token ?? ""
-      },
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/rest-its/scheme/lines'),
+        headers: {
+          "Content-Type": "application/json",
+          tokenHeaderKey: token ?? ""
+        },
+      ).timeout(Duration(seconds: 10));
 
-    final parsed = json.decode(response.body).cast<Map<String, dynamic>>();
-    return parsed.map<BusLine>((json) => BusLine.fromJson(json)).toList();
+      if (response.statusCode == 200) {
+        final List<dynamic> parsedList = json.decode(response.body);
+        return parsedList
+            .map<BusLine>((json) => BusLine.fromJson(json))
+            .toList();
+      } else {
+        throw Exception(
+            'Failed to fetch BusLines with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        throw Exception('Request timed out. Please try again.');
+      } else if (e is SocketException) {
+        throw Exception('Network issue. Please check your connection.');
+      }
+      rethrow;
+    }
   }
 
   Future<List<BusStop>> fetchStops() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/rest-its/scheme/stops?filter=true'),
-      headers: {
-        "Content-Type": "application/json",
-        tokenHeaderKey: token ?? ""
-      },
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/rest-its/scheme/stops?filter=true'),
+        headers: {
+          "Content-Type": "application/json",
+          tokenHeaderKey: token ?? ""
+        },
+      ).timeout(Duration(seconds: 10));
 
-    final parsed = json.decode(response.body).cast<Map<String, dynamic>>();
-    return parsed.map<BusStop>((json) => BusStop.fromJson(json)).toList();
+      if (response.statusCode == 200) {
+        final List<dynamic> parsedList = json.decode(response.body);
+        return parsedList
+            .map<BusStop>((json) => BusStop.fromJson(json))
+            .toList();
+      } else {
+        throw Exception(
+            'Failed to fetch BusStops with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        throw Exception('Request timed out. Please try again.');
+      } else if (e is SocketException) {
+        throw Exception('Network issue. Please check your connection.');
+      }
+      rethrow;
+    }
   }
 
   Future<List<BusStopLine>> fetchBusStopLines() async {
-    final response = await http.get(
-      Uri.parse("$baseUrl/rest-its/scheme/stop-lines"),
-      headers: {
-        "Content-Type": "application/json",
-        tokenHeaderKey: token ?? ""
-      },
-    );
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/rest-its/scheme/stop-lines"),
+        headers: {
+          "Content-Type": "application/json",
+          tokenHeaderKey: token ?? ""
+        },
+      ).timeout(Duration(
+          seconds: 10)); // Setting a 10-second timeout for the request.
 
-    if (response.statusCode == 200) {
-      final parsed = json.decode(response.body);
-      return parsed
-          .map<BusStopLine>((json) => BusStopLine.fromJson(json))
-          .toList();
-    } else {
-      throw Exception('Failed to fetch BusStopLines');
+      switch (response.statusCode) {
+        case 200:
+          final List<dynamic> parsedList = json.decode(response.body);
+          return parsedList
+              .map<BusStopLine>((json) => BusStopLine.fromJson(json))
+              .toList();
+
+        case 400:
+          throw Exception('Bad request. Please check the request format.');
+        case 401:
+          throw Exception('Unauthorized. Please check your token.');
+        case 403:
+          throw Exception('Forbidden. You do not have permission.');
+        case 404:
+          throw Exception('Endpoint not found.');
+        default:
+          throw Exception(
+              'Failed to fetch BusStopLines with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        throw Exception('Request timed out. Please try again.');
+      } else if (e is SocketException) {
+        throw Exception('Network issue. Please check your connection.');
+      }
+      rethrow; // If it's neither TimeoutException nor SocketException, rethrow the original exception.
     }
   }
 }
