@@ -22,31 +22,32 @@ class SettingsScreen extends StatelessWidget {
         }
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        // mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text('Spoken Command: ${voiceService.command}'),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: voiceService.isListening
-                ? null
-                : () =>
-                    voiceService.startListening(context, AppScreens.Settings),
-            child: Text('Start Listening'),
-          ),
-          SizedBox(height: 10),
-          ElevatedButton(
-            onPressed:
-                voiceService.isListening ? voiceService.stopListening : null,
-            child: Text('Stop Listening'),
-          ),
-          SizedBox(height: 10),
-          ElevatedButton(
-            child: Text("Press to hear a voice"),
-            onPressed: () {
-              voiceService.speak(
-                  "Здраво, јас сум Никола, вашиот личен читач на информации.");
-            },
-          ),
+          // Text('Spoken Command: ${voiceService.command}'),
+          // SizedBox(height: 20),
+          // ElevatedButton(
+          //   onPressed: voiceService.isListening
+          //       ? null
+          //       : () =>
+          //           voiceService.startListening(context, AppScreens.Settings),
+          //   child: Text('Start Listening'),
+          // ),
+          // SizedBox(height: 10),
+          // ElevatedButton(
+          //   onPressed:
+          //       voiceService.isListening ? voiceService.stopListening : null,
+          //   child: Text('Stop Listening'),
+          // ),
+          // SizedBox(height: 10),
+          // ElevatedButton(
+          //   child: Text("Press to hear a voice"),
+          //   onPressed: () {
+          //     voiceService.speak(
+          //         "Здраво, јас сум Никола, вашиот личен читач на информации.");
+          //   },
+          // ),
+          const SizedBox(height: 30),
           ToggleAssistant(
               voiceFunction: voiceService.setVoiceAssistantMode,
               toggleValue: voiceService.voiceAssistantMode),
