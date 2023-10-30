@@ -15,6 +15,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final buttonWidth = MediaQuery.of(context).size.width * 0.8;
     final voiceService = Provider.of<VoiceService>(context);
     if (voiceService.voiceAssistantMode) {
           voiceService.speak("Успешно го отворивте менито поставки");
@@ -24,29 +25,6 @@ class SettingsScreen extends StatelessWidget {
       child: Column(
         // mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          // Text('Spoken Command: ${voiceService.command}'),
-          // SizedBox(height: 20),
-          // ElevatedButton(
-          //   onPressed: voiceService.isListening
-          //       ? null
-          //       : () =>
-          //           voiceService.startListening(context, AppScreens.Settings),
-          //   child: Text('Start Listening'),
-          // ),
-          // SizedBox(height: 10),
-          // ElevatedButton(
-          //   onPressed:
-          //       voiceService.isListening ? voiceService.stopListening : null,
-          //   child: Text('Stop Listening'),
-          // ),
-          // SizedBox(height: 10),
-          // ElevatedButton(
-          //   child: Text("Press to hear a voice"),
-          //   onPressed: () {
-          //     voiceService.speak(
-          //         "Здраво, јас сум Никола, вашиот личен читач на информации.");
-          //   },
-          // ),
           const SizedBox(height: 30),
           ToggleAssistant(
               voiceFunction: voiceService.setVoiceAssistantMode,
@@ -61,38 +39,47 @@ class SettingsScreen extends StatelessWidget {
             activeColor: Colors.green,
             inactiveThumbColor: Colors.red,
           ),
-          SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => CameraScreen(),
-                      ),
-                    );
-                  },
-            child: Text('Camera Text Recognition'),
+          SizedBox(height: 50),
+          Container(
+            width: buttonWidth,
+            child: ElevatedButton(
+              onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => CameraScreen(),
+                        ),
+                      );
+                    },
+              child: Text('Camera Text Recognition'),
+            ),
           ),
           SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => WeatherScreen(),
-                      ),
-                    );
-                  },
-            child: Text('Weather'),
+          Container(
+            width: buttonWidth,
+            child: ElevatedButton(
+              onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => WeatherScreen(),
+                        ),
+                      );
+                    },
+              child: Text('Weather'),
+            ),
           ),
           SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => BusAlarmScreen(),
-                      ),
-                    );
-                  },
-            child: Text('Alarm'),
+          Container(
+            width: buttonWidth,
+            child: ElevatedButton(
+              onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => BusAlarmScreen(),
+                        ),
+                      );
+                    },
+              child: Text('Alarm'),
+            ),
           ),
         ],
       ),

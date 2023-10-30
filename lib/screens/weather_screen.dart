@@ -9,7 +9,7 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
-  WeatherFactory _weatherFactory = WeatherFactory(
+  final _weatherFactory = WeatherFactory(
       "8965dc3c86e1cfce0a0693cf82281804",
       language: Language.MACEDONIAN);
   Weather? _weather;
@@ -38,28 +38,28 @@ class _WeatherScreenState extends State<WeatherScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Weather in Skopje')),
+      appBar: AppBar(title: Text('Временска прогноза во Скопје')),
       body: _weather == null
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text(
-                      'Temperature: ${_weather!.temperature!.celsius!.toStringAsFixed(1)} °C',
+                      'Температурата денес е ${_weather!.temperature!.celsius!.toStringAsFixed(1)} °C',
                       style: TextStyle(fontSize: 20),
                       ),
                   SizedBox(height: 20),
-                  Text('Condition: ${_weather!.weatherDescription}',
+                  Text('Состојба на небото: ${_weather!.weatherDescription}',
                   style: TextStyle(fontSize: 20),),
                   SizedBox(height: 20),
                   Text(
-                    'Humidity: ${_weather!.humidity}%',
+                    'Влажност на воздухот: ${_weather!.humidity}%',
                     style: TextStyle(fontSize: 20),
                   ),
                   SizedBox(height: 20),
                   Text(
-                    'Wind Speed: ${_weather!.windSpeed} m/s',
+                    'Ветар со брзина од ${_weather!.windSpeed} метри во секунда',
                     style: TextStyle(fontSize: 20),
                   ),
                 ],

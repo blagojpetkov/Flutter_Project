@@ -18,6 +18,7 @@ class HttpService with ChangeNotifier {
   final String baseUrl = 'http://info.skopska.mk:8080';
   final String tokenHeaderKey = "Eurogps.Eu.Sid";
   String? token;
+  bool isDataLoaded = false;
 
   int entityId = -1; // The ID of the line / route / stop
 
@@ -233,6 +234,7 @@ class HttpService with ChangeNotifier {
     lines = await fetchLines();
     stops = await fetchStops();
     busStopLines = await fetchBusStopLines();
+    isDataLoaded = true;
     print("Data Loaded Successfully");
     notifyListeners();
   }

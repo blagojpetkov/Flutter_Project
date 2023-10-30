@@ -4,6 +4,7 @@ import 'package:postojka/models/BusLine.dart';
 import 'package:postojka/models/BusRoute.dart';
 import 'package:postojka/models/BusStop.dart';
 import 'package:postojka/models/enumerations/app_screens.dart';
+import 'package:postojka/screens/bus_line_map_screen.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/theme_service.dart';
@@ -25,10 +26,11 @@ class BusRouteDetailScreen extends StatefulWidget {
   _BusRouteDetailScreenState createState() => _BusRouteDetailScreenState();
 }
 
-class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteAware{
+class _BusRouteDetailScreenState extends State<BusRouteDetailScreen>
+    with RouteAware {
   bool isFavorite = false;
 
-  void speak(){
+  void speak() {
     VoiceService voiceService =
         Provider.of<VoiceService>(context, listen: false);
 
@@ -42,7 +44,7 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteA
     }
   }
 
-   @override
+  @override
   void didPopNext() {
     super.didPopNext();
     // This will be called when the user comes back to this screen from another screen
@@ -55,7 +57,7 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteA
     routeObserver.unsubscribe(this);
     super.dispose();
   }
-  
+
   _toggleFavoriteStatus() {
     HttpService httpService = Provider.of<HttpService>(context, listen: false);
     httpService.toggleFavoriteRoute(widget.route);
@@ -99,6 +101,7 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteA
     var stopsForThisRoute = getStopsForRoute();
     speak();
 
+    final buttonWidth = MediaQuery.of(context).size.width * 0.8;
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -148,6 +151,24 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteA
                   style: TextStyle(fontSize: 16),
                 ),
                 SizedBox(height: 20),
+
+                Center(
+                  child: Container(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BusLineMapScreen(busStops: stopsForThisRoute),
+                          ),
+                        );
+                      },
+                      child: Text('Мапа на рута'),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
                 Text(
                   'Постојки:',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -187,14 +208,16 @@ class _BusRouteDetailScreenState extends State<BusRouteDetailScreen> with RouteA
           )
         ],
       ),
-      floatingActionButton: voiceService.voiceAssistantMode ? FloatingActionButton(
-        onPressed: () {
-          // Action to be performed when FAB is clicked
-          voiceService.stopSpeaking();
-        },
-        child: Icon(Icons.stop),
-        backgroundColor: AppColors.accentColor1,
-      ) : null,
+      floatingActionButton: voiceService.voiceAssistantMode
+          ? FloatingActionButton(
+              onPressed: () {
+                // Action to be performed when FAB is clicked
+                voiceService.stopSpeaking();
+              },
+              child: Icon(Icons.stop),
+              backgroundColor: AppColors.accentColor1,
+            )
+          : null,
     );
   }
 }

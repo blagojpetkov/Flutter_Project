@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/screens/home_screen.dart';
+import 'package:postojka/screens/splash_screen.dart';
 import 'package:postojka/services/theme_service.dart';
 import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +15,7 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.@override
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
@@ -39,13 +40,21 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             title: 'Flutter Demo',
             theme: themeService.getTheme(),
-            home: HomeScreen(),
+            home: Consumer<HttpService>(
+              builder: (context, httpService, child) {
+                if (httpService.isDataLoaded) {
+                  return HomeScreen();
+                }
+                return SplashScreen();
+              },
+            ),
             navigatorObservers: [routeObserver],
           );
         },
       ),
     );
   }
+
 }
 
 class AppColors {
