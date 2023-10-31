@@ -4,17 +4,10 @@ import 'package:postojka/main.dart';
 class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.primaryBackground,
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
-        child: Text(
-          "Splash Screen",
-          style: TextStyle(
-            color: AppColors.primaryText,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: Image.asset('assets/splash.png')
       ),
     );
   }
