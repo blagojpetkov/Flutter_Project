@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_alarm_screen.dart';
 import 'package:postojka/screens/camera_screen.dart';
-import 'package:postojka/screens/ocr_result_screen.dart';
 import 'package:postojka/screens/weather_screen.dart';
-import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/theme_service.dart';
 import 'package:postojka/services/voice_service.dart';
 import 'package:postojka/widgets/toggle_assistant.dart';
 import 'package:provider/provider.dart';
+import 'package:vibration/vibration.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -18,9 +16,9 @@ class SettingsScreen extends StatelessWidget {
     final buttonWidth = MediaQuery.of(context).size.width * 0.8;
     final voiceService = Provider.of<VoiceService>(context);
     if (voiceService.voiceAssistantMode) {
-          voiceService.speak("Успешно го отворивте менито поставки");
-          print("Успешно го отворивте менито поставки");
-        }
+      voiceService.speak("Успешно го отворивте менито поставки");
+      print("Успешно го отворивте менито поставки");
+    }
     return Center(
       child: Column(
         // mainAxisAlignment: MainAxisAlignment.center,
@@ -44,12 +42,12 @@ class SettingsScreen extends StatelessWidget {
             width: buttonWidth,
             child: ElevatedButton(
               onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => CameraScreen(),
-                        ),
-                      );
-                    },
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => CameraScreen(),
+                  ),
+                );
+              },
               child: Text('Camera Text Recognition'),
             ),
           ),
@@ -58,12 +56,12 @@ class SettingsScreen extends StatelessWidget {
             width: buttonWidth,
             child: ElevatedButton(
               onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => WeatherScreen(),
-                        ),
-                      );
-                    },
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => WeatherScreen(),
+                  ),
+                );
+              },
               child: Text('Weather'),
             ),
           ),
@@ -71,13 +69,17 @@ class SettingsScreen extends StatelessWidget {
           Container(
             width: buttonWidth,
             child: ElevatedButton(
-              onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => BusAlarmScreen(),
-                        ),
-                      );
-                    },
+              onPressed: () async {
+                print("Pressing haptic button");
+                if (await Vibration.hasVibrator() != null) {
+                  Vibration.vibrate();
+                }
+                // Navigator.of(context).push(
+                //   MaterialPageRoute(
+                //     builder: (context) => BusAlarmScreen(),
+                //   ),
+                // );
+              },
               child: Text('Alarm'),
             ),
           ),
