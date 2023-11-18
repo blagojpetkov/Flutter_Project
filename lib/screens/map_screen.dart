@@ -22,8 +22,8 @@ class _MapScreenState extends State<MapScreen> {
   List<BusStop> stops = [];
   Set<Marker> _markers = {};
 
-  BusStop? startStop;
-  BusStop? endStop;
+  LatLng? startLocation;
+  LatLng? endLocation;
 
   @override
   void initState() {
@@ -129,7 +129,6 @@ class _MapScreenState extends State<MapScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _checkRouteAvailability,
         child: const Icon(Icons.directions_bus),
-        
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
@@ -138,17 +137,17 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildSelectedStopsWidget() {
     return Column(
       children: <Widget>[
-        if (startStop != null)
-          _buildStopRow(
-              startStop!, "Почетна Постојка", () => setState(() => startStop = null)),
-        if (endStop != null)
-          _buildStopRow(
-              endStop!, "Крајна Постојка", () => setState(() => endStop = null)),
+        if (startLocation != null)
+          _buildStopRow(startLocation!, "Почетна Локација",
+              () => setState(() => startLocation = null)),
+        if (endLocation != null)
+          _buildStopRow(endLocation!, "Крајна Локација",
+              () => setState(() => endLocation = null)),
       ],
     );
   }
 
-  Widget _buildStopRow(BusStop stop, String label, VoidCallback onRemove) {
+  Widget _buildStopRow(LatLng location, String label, VoidCallback onRemove) {
     return Card(
       margin: EdgeInsets.all(8.0),
       child: Padding(
@@ -157,7 +156,8 @@ class _MapScreenState extends State<MapScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Expanded(
-              child: Text("$label: ${stop.name}"),
+              child:
+                  Text("$label: ${location.latitude}, ${location.longitude}"),
             ),
             IconButton(
               icon: Icon(Icons.delete),
@@ -170,39 +170,43 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _checkRouteAvailability() {
-    if (startStop == null || endStop == null) {
+    if (startLocation == null || endLocation == null) {
       // Show an error or prompt the user to select both stops
       return;
     }
 
-    // Implement logic to check if there's a route containing both stops
-    // This is a placeholder logic
-    List<BusRoute> routes = _routesContainingStops(startStop!, endStop!);
-
-    // Show the result to the user
+    List<BusRoute> routes = _routesForLocations(startLocation!, endLocation!);
     _showRouteAvailabilityMessage(routes);
   }
 
-  List<BusRoute> _routesContainingStops(BusStop start, BusStop end) {
-    // Retrieve all routes from HttpService
+  List<BusRoute> _routesForLocations(LatLng startLocation, LatLng endLocation) {
     final httpService = Provider.of<HttpService>(context, listen: false);
     List<BusRoute> allRoutes = httpService.routes;
 
-    List<BusRoute> routesContainingStops = [];
+    List<BusRoute> routesForLocations = [];
+    List<BusStop> startingBusStops = _findNearestBusStops(startLocation);
+    List<BusStop> endingBusStops = _findNearestBusStops(endLocation);
 
     for (var route in allRoutes) {
-      bool startStopFound = false;
-      bool endStopFound = false;
+      int startIndex = -1;
 
-      for (var stopId in route.stopIds) {
-        if (stopId == start.id) startStopFound = true;
-        if (stopId == end.id) endStopFound = true;
+      for (int i = 0; i < route.stopIds.length; i++) {
+        var stopId = route.stopIds[i];
 
-        if (startStopFound && endStopFound) routesContainingStops.add(route);
+        // Check for starting bus stop
+        if (startIndex == -1 && startingBusStops.any((s) => s.id == stopId)) {
+          startIndex = i;
+        }
+
+        // Check for ending bus stop
+        if (startIndex != -1 && endingBusStops.any((e) => e.id == stopId) && i > startIndex) {
+            routesForLocations.add(route);
+            break;
+        }
       }
     }
 
-    return routesContainingStops;
+    return routesForLocations;
   }
 
   void _showRouteAvailabilityMessage(List<BusRoute> routes) {
@@ -242,11 +246,11 @@ class _MapScreenState extends State<MapScreen> {
     for (BusStop stop in stops) {
       newMarkers.add(
         Marker(
-            markerId: MarkerId(stop.id.toString()),
-            position: LatLng(stop.lat, stop.lon),
-            infoWindow: InfoWindow(title: stop.name),
-            // onTap: () => _onMarkerTapped(stop)
-            ),
+          markerId: MarkerId(stop.id.toString()),
+          position: LatLng(stop.lat, stop.lon),
+          infoWindow: InfoWindow(title: stop.name),
+          // onTap: () => _onMarkerTapped(stop)
+        ),
       );
     }
 
@@ -276,49 +280,52 @@ class _MapScreenState extends State<MapScreen> {
   void _onMapTapped(LatLng position) {
     // Find the nearest bus stop to the tapped position
     print("Tapped on the map");
-    final nearestStop = _findNearestBusStop(position);
-    if (nearestStop == null) return;
-
     // First select the start stop, then the end stop
     setState(() {
-      if (startStop == null) {
-        startStop = nearestStop;
-        print("selected start stop as ${nearestStop.name}");
-      } else if (endStop == null) {
-        endStop = nearestStop;
-        print("selected end stop as ${nearestStop.name}");
+      if (startLocation == null) {
+        startLocation = position;
+          _markers.add(
+            Marker(
+              markerId: const MarkerId("start_location"),
+              position:
+                  LatLng(position.latitude, position.longitude),
+              infoWindow: const InfoWindow(title: "Почетна локација"),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor
+                  .hueMagenta), // You can customize the marker icon
+            ),
+          );
+      } else if (endLocation == null) {
+        endLocation = position;
+          _markers.add(
+            Marker(
+              markerId: const MarkerId("end_location"),
+              position:
+                  LatLng(position.latitude, position.longitude),
+              infoWindow: const InfoWindow(title: "Крајна локација"),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor
+                  .hueYellow), // You can customize the marker icon
+            ),
+          );
       }
     });
   }
 
-  void _onMarkerTapped(BusStop stop) {
-    print("Marker tapped: ${stop.name}");
-    setState(() {
-      if (startStop == null) {
-        startStop = stop;
-        print("selected start stop as ${stop.name}");
-      } else if (endStop == null) {
-        endStop = stop;
-        print("selected end stop as ${stop.name}");
-      } else {
-        startStop = endStop = null;
-        print("removed selection");
-      }
-    });
-  }
+  List<BusStop> _findNearestBusStops(LatLng position) {
+    const double maxDistance = 300;
+    // The distance in meters to the bus stop
+    List<Map<String, dynamic>> nearbyStops = [];
 
-  BusStop? _findNearestBusStop(LatLng position) {
-    double minDistance = double.infinity;
-    BusStop? nearestStop;
     for (var stop in stops) {
       var distance = _calculateDistance(
           position.latitude, position.longitude, stop.lat, stop.lon);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestStop = stop;
+      if (distance < maxDistance) {
+        nearbyStops.add({'busStop': stop, 'distance': distance});
       }
     }
-    return nearestStop;
+
+    nearbyStops.sort((a, b) => a['distance'].compareTo(b['distance']));
+
+    return nearbyStops.map((item) => item['busStop'] as BusStop).toList();
   }
 
   double _calculateDistance(
