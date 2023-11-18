@@ -97,30 +97,74 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GoogleMap(
-        markers: _markers,
-        onMapCreated: (controller) {
-          VoiceService voiceService =
-              Provider.of<VoiceService>(context, listen: false);
-          if (voiceService.voiceAssistantMode) {
-            voiceService.speak("Успешно го отворивте менито мапа");
-            print("Успешно го отворивте менито мапа");
-          }
-          print("Map is created");
-          _displayMarkers();
-        },
-        initialCameraPosition: CameraPosition(
-          target: _locationData != null
-              ? LatLng(_locationData!.latitude!, _locationData!.longitude!)
-              : const LatLng(41.99646,
-                  21.43141), // Use default location if user location is not available
-          zoom: 12.0,
+      body: Stack(children: [
+        GoogleMap(
+          markers: _markers,
+          onMapCreated: (controller) {
+            VoiceService voiceService =
+                Provider.of<VoiceService>(context, listen: false);
+            if (voiceService.voiceAssistantMode) {
+              voiceService.speak("Успешно го отворивте менито мапа");
+              print("Успешно го отворивте менито мапа");
+            }
+            print("Map is created");
+            _displayMarkers();
+          },
+          initialCameraPosition: CameraPosition(
+            target: _locationData != null
+                ? LatLng(_locationData!.latitude!, _locationData!.longitude!)
+                : const LatLng(41.99646,
+                    21.43141), // Use default location if user location is not available
+            zoom: 12.0,
+          ),
+          onTap: _onMapTapped,
         ),
-        onTap: _onMapTapped,
-      ),
+        Positioned(
+          top: 10.0,
+          right: 10.0,
+          left: 10.0,
+          child: _buildSelectedStopsWidget(),
+        ),
+      ]),
       floatingActionButton: FloatingActionButton(
         onPressed: _checkRouteAvailability,
-        child: Icon(Icons.directions_bus),
+        child: const Icon(Icons.directions_bus),
+        
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildSelectedStopsWidget() {
+    return Column(
+      children: <Widget>[
+        if (startStop != null)
+          _buildStopRow(
+              startStop!, "Почетна Постојка", () => setState(() => startStop = null)),
+        if (endStop != null)
+          _buildStopRow(
+              endStop!, "Крајна Постојка", () => setState(() => endStop = null)),
+      ],
+    );
+  }
+
+  Widget _buildStopRow(BusStop stop, String label, VoidCallback onRemove) {
+    return Card(
+      margin: EdgeInsets.all(8.0),
+      child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Expanded(
+              child: Text("$label: ${stop.name}"),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: onRemove,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -153,7 +197,7 @@ class _MapScreenState extends State<MapScreen> {
       for (var stopId in route.stopIds) {
         if (stopId == start.id) startStopFound = true;
         if (stopId == end.id) endStopFound = true;
-    
+
         if (startStopFound && endStopFound) routesContainingStops.add(route);
       }
     }
@@ -165,8 +209,8 @@ class _MapScreenState extends State<MapScreen> {
     final httpService = Provider.of<HttpService>(context, listen: false);
     final routeIds = routes.map((route) => route.id).toSet();
     final lines = httpService.lines
-      .where((line) => line.routeIds.any(routeIds.contains))
-      .toList();
+        .where((line) => line.routeIds.any(routeIds.contains))
+        .toList();
     String message = "";
 
     if (lines.isNotEmpty) {
@@ -201,7 +245,8 @@ class _MapScreenState extends State<MapScreen> {
             markerId: MarkerId(stop.id.toString()),
             position: LatLng(stop.lat, stop.lon),
             infoWindow: InfoWindow(title: stop.name),
-            onTap: () => _onMarkerTapped(stop)),
+            // onTap: () => _onMarkerTapped(stop)
+            ),
       );
     }
 
@@ -242,10 +287,6 @@ class _MapScreenState extends State<MapScreen> {
       } else if (endStop == null) {
         endStop = nearestStop;
         print("selected end stop as ${nearestStop.name}");
-        // Optionally, display a dialog or a snackbar to confirm the selection
-      } else {
-        startStop = endStop = null;
-        print("removed selection");
       }
     });
   }
