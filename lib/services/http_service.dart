@@ -36,7 +36,7 @@ class HttpService with ChangeNotifier {
     print("Current screen is " + currentScreen.toString());
   }
 
-  int currentIndex = 0;
+  int currentIndex = 2;
   void setCurrentIndex(int index) {
     currentIndex = index;
     notifyListeners();

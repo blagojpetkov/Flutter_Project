@@ -1,17 +1,16 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:postojka/models/BusLine.dart';
+import 'package:postojka/main.dart';
 import 'package:postojka/models/BusRoute.dart';
-import 'package:postojka/models/enumerations/app_screens.dart';
+import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
 import '../services/http_service.dart';
 import '../models/BusStop.dart';
 import 'package:location/location.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 
 class MapScreen extends StatefulWidget {
   @override
@@ -21,6 +20,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   List<BusStop> stops = [];
   Set<Marker> _markers = {};
+  Marker? startMarker;
+  Marker? endMarker;
+  Marker? userMarker;
 
   LatLng? startLocation;
   LatLng? endLocation;
@@ -108,7 +110,7 @@ class _MapScreenState extends State<MapScreen> {
               print("Успешно го отворивте менито мапа");
             }
             print("Map is created");
-            _displayMarkers();
+            // _displayMarkers();
           },
           initialCameraPosition: CameraPosition(
             target: _locationData != null
@@ -127,6 +129,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ]),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
         onPressed: _checkRouteAvailability,
         child: const Icon(Icons.directions_bus),
       ),
@@ -138,34 +141,60 @@ class _MapScreenState extends State<MapScreen> {
     return Column(
       children: <Widget>[
         if (startLocation != null)
-          _buildStopRow(startLocation!, "Почетна Локација",
-              () => setState(() => startLocation = null)),
+          _buildLocationRow(
+              startLocation!,
+              "Почетна Локација",
+              () => setState(() {
+                    startLocation = null;
+                    _markers.remove(startMarker);
+                    startMarker = null;
+                  })),
         if (endLocation != null)
-          _buildStopRow(endLocation!, "Крајна Локација",
-              () => setState(() => endLocation = null)),
+          _buildLocationRow(
+              endLocation!,
+              "Крајна Локација",
+              () => setState(() {
+                    endLocation = null;
+                    _markers.remove(endMarker);
+                    endMarker = null;
+                  })),
       ],
     );
   }
 
-  Widget _buildStopRow(LatLng location, String label, VoidCallback onRemove) {
-    return Card(
-      margin: EdgeInsets.all(8.0),
-      child: Padding(
-        padding: EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Expanded(
-              child:
-                  Text("$label: ${location.latitude}, ${location.longitude}"),
+  Widget _buildLocationRow(
+      LatLng location, String label, VoidCallback onRemove) {
+    return FutureBuilder(
+      future: geocoding.placemarkFromCoordinates(
+          location.latitude, location.longitude, localeIdentifier: "mk_MK"),
+      builder: (BuildContext context,
+          AsyncSnapshot<List<geocoding.Placemark>> snapshot) {
+        if (snapshot.hasData) {
+          geocoding.Placemark place = snapshot.data!.first;
+          String address =
+              "${place.street}, ${place.locality}, ${place.country}";
+          return Card(
+            margin: EdgeInsets.all(8.0),
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Expanded(
+                    child: Text("$label: $address"),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: onRemove,
+                  ),
+                ],
+              ),
             ),
-            IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: onRemove,
-            ),
-          ],
-        ),
-      ),
+          );
+        } else {
+          return CircularProgressIndicator();
+        }
+      },
     );
   }
 
@@ -199,9 +228,11 @@ class _MapScreenState extends State<MapScreen> {
         }
 
         // Check for ending bus stop
-        if (startIndex != -1 && endingBusStops.any((e) => e.id == stopId) && i > startIndex) {
-            routesForLocations.add(route);
-            break;
+        if (startIndex != -1 &&
+            endingBusStops.any((e) => e.id == stopId) &&
+            i > startIndex) {
+          routesForLocations.add(route);
+          break;
         }
       }
     }
@@ -215,62 +246,70 @@ class _MapScreenState extends State<MapScreen> {
     final lines = httpService.lines
         .where((line) => line.routeIds.any(routeIds.contains))
         .toList();
-    String message = "";
-
-    if (lines.isNotEmpty) {
-      final lineNames = lines.map((line) => line.name).join(", ");
-      message = "Bus lines connecting those bus stops: $lineNames";
-    } else {
-      message = "No bus lines connect these stops.";
-    }
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Route Availability'),
-        content: Text(message),
+        title: Text('Линии кои се движат низ бараните локации'),
+        content: lines.isNotEmpty
+            ? Container(
+                width: double
+                    .maxFinite, // Ensures the container takes full width of the dialog
+                child: ListView.builder(
+                  shrinkWrap:
+                      true, // Makes the ListView only occupy needed space
+                  itemCount: lines.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      color: AppColors.secondaryBackground,
+                      child: ListTile(
+                        title: Text(lines[index].name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
+                        onTap: () {
+                          Navigator.of(context)
+                              .pop(); // Close the dialog before navigating
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => BusLineDetailScreen(
+                                line: lines[index],
+                                httpService: httpService,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              )
+            : Text("За жал нема автобуски линии кои се движат низ бараните локации."),
         actions: <Widget>[
-          TextButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+          Center(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.5,
+              child: ElevatedButton(
+                child: Text('Во ред'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _displayMarkers() {
-    Set<Marker> newMarkers = {};
-    for (BusStop stop in stops) {
-      newMarkers.add(
-        Marker(
-          markerId: MarkerId(stop.id.toString()),
-          position: LatLng(stop.lat, stop.lon),
-          infoWindow: InfoWindow(title: stop.name),
-          // onTap: () => _onMarkerTapped(stop)
-        ),
-      );
-    }
-
-    setState(() {
-      _markers = newMarkers;
-    });
-  }
-
   void _displayUserMarker() {
     if (_locationData != null) {
       print("Adding the users location");
-      _markers.add(
-        Marker(
-          markerId: const MarkerId("user_location"),
-          position: LatLng(_locationData!.latitude!, _locationData!.longitude!),
-          infoWindow: const InfoWindow(title: "Вашата локација"),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueBlue), // You can customize the marker icon
-        ),
+      userMarker = Marker(
+        markerId: const MarkerId("user_location"),
+        position: LatLng(_locationData!.latitude!, _locationData!.longitude!),
+        infoWindow: const InfoWindow(title: "Вашата локација"),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueBlue), // You can customize the marker icon
       );
+      _markers.add(userMarker!);
     } else {
       print("Location data is null");
     }
@@ -284,28 +323,24 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       if (startLocation == null) {
         startLocation = position;
-          _markers.add(
-            Marker(
-              markerId: const MarkerId("start_location"),
-              position:
-                  LatLng(position.latitude, position.longitude),
-              infoWindow: const InfoWindow(title: "Почетна локација"),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor
-                  .hueMagenta), // You can customize the marker icon
-            ),
-          );
+        startMarker = Marker(
+          markerId: const MarkerId("start_location"),
+          position: LatLng(position.latitude, position.longitude),
+          infoWindow: const InfoWindow(title: "Почетна локација"),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueMagenta), // You can customize the marker icon
+        );
+        _markers.add(startMarker!);
       } else if (endLocation == null) {
         endLocation = position;
-          _markers.add(
-            Marker(
-              markerId: const MarkerId("end_location"),
-              position:
-                  LatLng(position.latitude, position.longitude),
-              infoWindow: const InfoWindow(title: "Крајна локација"),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor
-                  .hueYellow), // You can customize the marker icon
-            ),
-          );
+        endMarker = Marker(
+          markerId: const MarkerId("end_location"),
+          position: LatLng(position.latitude, position.longitude),
+          infoWindow: const InfoWindow(title: "Крајна локација"),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueYellow), // You can customize the marker icon
+        );
+        _markers.add(endMarker!);
       }
     });
   }
