@@ -140,6 +140,23 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildSelectedStopsWidget() {
     return Column(
       children: <Widget>[
+        if (startLocation == null && endLocation == null)
+          Container(
+              margin: EdgeInsets.only(bottom: 8),
+              color: AppColors.primaryBackground,
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.09,
+              child: const Card(
+                child: Center(
+                    child: Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Text(
+                    "Одберете почетна и крајна локација за вашето патување",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                )),
+              )),
         if (startLocation != null)
           _buildLocationRow(
               startLocation!,
@@ -166,7 +183,8 @@ class _MapScreenState extends State<MapScreen> {
       LatLng location, String label, VoidCallback onRemove) {
     return FutureBuilder(
       future: geocoding.placemarkFromCoordinates(
-          location.latitude, location.longitude, localeIdentifier: "mk_MK"),
+          location.latitude, location.longitude,
+          localeIdentifier: "mk_MK"),
       builder: (BuildContext context,
           AsyncSnapshot<List<geocoding.Placemark>> snapshot) {
         if (snapshot.hasData) {
@@ -263,7 +281,11 @@ class _MapScreenState extends State<MapScreen> {
                     return Card(
                       color: AppColors.secondaryBackground,
                       child: ListTile(
-                        title: Text(lines[index].name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
+                        title: Text(
+                          lines[index].name,
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
                         onTap: () {
                           Navigator.of(context)
                               .pop(); // Close the dialog before navigating
@@ -281,7 +303,8 @@ class _MapScreenState extends State<MapScreen> {
                   },
                 ),
               )
-            : Text("За жал нема автобуски линии кои се движат низ бараните локации."),
+            : Text(
+                "За жал нема автобуски линии кои се движат низ бараните локации."),
         actions: <Widget>[
           Center(
             child: SizedBox(

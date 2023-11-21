@@ -60,9 +60,9 @@ class HttpService with ChangeNotifier {
   HttpService() {
     fetchToken();
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
-      print("EXECUTED TIMER");
+      print("EXECUTED TIMER fetchBusStopLines");
       busStopLines = await fetchBusStopLines();
-      // notifyListeners();
+      notifyListeners();
     });
     loadFavorites();
   }
@@ -240,129 +240,172 @@ class HttpService with ChangeNotifier {
   }
 
   Future<List<BusRoute>> fetchRoutes() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/rest-its/scheme/routes'),
-        headers: {
-          "Content-Type": "application/json",
-          tokenHeaderKey: token ?? ""
-        },
-      ).timeout(Duration(seconds: 10));
+    int retryCount = 0;
+    int maxRetries = 3;
 
-      if (response.statusCode == 200) {
-        final List<dynamic> parsedList = json.decode(response.body);
-        return parsedList
-            .map<BusRoute>((json) => BusRoute.fromJson(json))
-            .toList();
-      } else {
-        throw Exception(
-            'Failed to fetch BusRoutes with status code: ${response.statusCode}');
+    while (retryCount < maxRetries) {
+      try {
+        final response = await http.get(
+          Uri.parse('$baseUrl/rest-its/scheme/routes'),
+          headers: {
+            "Content-Type": "application/json",
+            tokenHeaderKey: token ?? ""
+          },
+        ).timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          final List<dynamic> parsedList = json.decode(response.body);
+          return parsedList
+              .map<BusRoute>((json) => BusRoute.fromJson(json))
+              .toList();
+        } else {
+          throw Exception(
+              'Failed to fetch BusRoutes with status code: ${response.statusCode}');
+        }
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          if (e is TimeoutException) {
+            throw Exception(
+                'Request timed out after multiple attempts. Please try again.');
+          } else if (e is SocketException) {
+            throw Exception('Network issue. Please check your connection.');
+          }
+          rethrow;
+        }
       }
-    } catch (e) {
-      if (e is TimeoutException) {
-        throw Exception('Request timed out. Please try again.');
-      } else if (e is SocketException) {
-        throw Exception('Network issue. Please check your connection.');
-      }
-      rethrow;
     }
+    throw Exception('Failed to fetch BusRoutes after multiple attempts.');
   }
 
   Future<List<BusLine>> fetchLines() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/rest-its/scheme/lines'),
-        headers: {
-          "Content-Type": "application/json",
-          tokenHeaderKey: token ?? ""
-        },
-      ).timeout(Duration(seconds: 10));
+    int retryCount = 0;
+    int maxRetries = 3;
 
-      if (response.statusCode == 200) {
-        final List<dynamic> parsedList = json.decode(response.body);
-        return parsedList
-            .map<BusLine>((json) => BusLine.fromJson(json))
-            .toList();
-      } else {
-        throw Exception(
-            'Failed to fetch BusLines with status code: ${response.statusCode}');
+    while (retryCount < maxRetries) {
+      try {
+        final response = await http.get(
+          Uri.parse('$baseUrl/rest-its/scheme/lines'),
+          headers: {
+            "Content-Type": "application/json",
+            tokenHeaderKey: token ?? ""
+          },
+        ).timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          final List<dynamic> parsedList = json.decode(response.body);
+          return parsedList
+              .map<BusLine>((json) => BusLine.fromJson(json))
+              .toList();
+        } else {
+          throw Exception(
+              'Failed to fetch BusLines with status code: ${response.statusCode}');
+        }
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          if (e is TimeoutException) {
+            throw Exception(
+                'Request timed out after multiple attempts. Please try again.');
+          } else if (e is SocketException) {
+            throw Exception('Network issue. Please check your connection.');
+          }
+          rethrow; // For any other exceptions
+        }
       }
-    } catch (e) {
-      if (e is TimeoutException) {
-        throw Exception('Request timed out. Please try again.');
-      } else if (e is SocketException) {
-        throw Exception('Network issue. Please check your connection.');
-      }
-      rethrow;
     }
+
+    throw Exception('Failed to fetch BusLines after multiple attempts.');
   }
 
   Future<List<BusStop>> fetchStops() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/rest-its/scheme/stops?filter=true'),
-        headers: {
-          "Content-Type": "application/json",
-          tokenHeaderKey: token ?? ""
-        },
-      ).timeout(Duration(seconds: 10));
+    int retryCount = 0;
+    const int maxRetries = 3;
 
-      if (response.statusCode == 200) {
-        final List<dynamic> parsedList = json.decode(response.body);
-        return parsedList
-            .map<BusStop>((json) => BusStop.fromJson(json))
-            .toList();
-      } else {
-        throw Exception(
-            'Failed to fetch BusStops with status code: ${response.statusCode}');
+    while (retryCount < maxRetries) {
+      try {
+        final response = await http.get(
+          Uri.parse('$baseUrl/rest-its/scheme/stops?filter=true'),
+          headers: {
+            "Content-Type": "application/json",
+            tokenHeaderKey: token ?? ""
+          },
+        ).timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          final List<dynamic> parsedList = json.decode(response.body);
+          return parsedList
+              .map<BusStop>((json) => BusStop.fromJson(json))
+              .toList();
+        } else {
+          throw Exception(
+              'Failed to fetch BusStops with status code: ${response.statusCode}');
+        }
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          if (e is TimeoutException) {
+            throw Exception(
+                'Request timed out after multiple attempts. Please try again.');
+          } else if (e is SocketException) {
+            throw Exception('Network issue. Please check your connection.');
+          }
+          rethrow; // For any other exceptions
+        }
       }
-    } catch (e) {
-      if (e is TimeoutException) {
-        throw Exception('Request timed out. Please try again.');
-      } else if (e is SocketException) {
-        throw Exception('Network issue. Please check your connection.');
-      }
-      rethrow;
     }
+
+    // If all retries fail, you can handle it accordingly
+    throw Exception('Failed to fetch BusStops after multiple attempts.');
   }
 
   Future<List<BusStopLine>> fetchBusStopLines() async {
-    try {
-      final response = await http.get(
-        Uri.parse("$baseUrl/rest-its/scheme/stop-lines"),
-        headers: {
-          "Content-Type": "application/json",
-          tokenHeaderKey: token ?? ""
-        },
-      ).timeout(Duration(
-          seconds: 10)); // Setting a 10-second timeout for the request.
+    int retryCount = 0;
+    const int maxRetries = 3;
 
-      switch (response.statusCode) {
-        case 200:
-          final List<dynamic> parsedList = json.decode(response.body);
-          return parsedList
-              .map<BusStopLine>((json) => BusStopLine.fromJson(json))
-              .toList();
+    while (retryCount < maxRetries) {
+      try {
+        final response = await http.get(
+          Uri.parse("$baseUrl/rest-its/scheme/stop-lines"),
+          headers: {
+            "Content-Type": "application/json",
+            tokenHeaderKey: token ?? ""
+          },
+        ).timeout(const Duration(seconds: 5));
 
-        case 400:
-          throw Exception('Bad request. Please check the request format.');
-        case 401:
-          throw Exception('Unauthorized. Please check your token.');
-        case 403:
-          throw Exception('Forbidden. You do not have permission.');
-        case 404:
-          throw Exception('Endpoint not found.');
-        default:
-          throw Exception(
-              'Failed to fetch BusStopLines with status code: ${response.statusCode}');
+        switch (response.statusCode) {
+          case 200:
+            final List<dynamic> parsedList = json.decode(response.body);
+            return parsedList
+                .map<BusStopLine>((json) => BusStopLine.fromJson(json))
+                .toList();
+
+          case 400:
+            throw Exception('Bad request. Please check the request format.');
+          case 401:
+            throw Exception('Unauthorized. Please check your token.');
+          case 403:
+            throw Exception('Forbidden. You do not have permission.');
+          case 404:
+            throw Exception('Endpoint not found.');
+          default:
+            throw Exception(
+                'Failed to fetch BusStopLines with status code: ${response.statusCode}');
+        }
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          if (e is TimeoutException) {
+            throw Exception(
+                'Request timed out after multiple attempts. Please try again.');
+          } else if (e is SocketException) {
+            throw Exception('Network issue. Please check your connection.');
+          }
+          rethrow;
+        }
       }
-    } catch (e) {
-      if (e is TimeoutException) {
-        throw Exception('Request timed out. Please try again.');
-      } else if (e is SocketException) {
-        throw Exception('Network issue. Please check your connection.');
-      }
-      rethrow; // If it's neither TimeoutException nor SocketException, rethrow the original exception.
     }
+
+    throw Exception('Failed to fetch BusStopLines after multiple attempts.');
   }
 }

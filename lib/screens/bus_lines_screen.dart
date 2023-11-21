@@ -5,7 +5,7 @@ import 'package:postojka/screens/bus_line_detail_screen.dart';
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
-
+import 'dart:math';
 class BusLinesScreen extends StatefulWidget {
   @override
   _LinesScreenState createState() => _LinesScreenState();
@@ -42,11 +42,45 @@ class _LinesScreenState extends State<BusLinesScreen> with RouteAware {
   // This function will filter the lines based on the search query
   List<BusLine> _filterLines(List<BusLine> lines, String query) {
     if (query.isEmpty) {
+      lines.sort(_naturalCompare);
       return lines;
     }
-    return lines
+
+    final filteredLines = lines
         .where((line) => line.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
+
+    filteredLines.sort(_naturalCompare);
+
+    return filteredLines;
+  }
+
+  int _naturalCompare(BusLine a, BusLine b) {
+    final RegExp regExp = RegExp(r'(\d+|\D+)');
+    final List<String> partsA =
+        regExp.allMatches(a.name).map((m) => m.group(0)!).toList();
+    final List<String> partsB =
+        regExp.allMatches(b.name).map((m) => m.group(0)!).toList();
+
+    for (int i = 0; i < min(partsA.length, partsB.length); i++) {
+      final partA = partsA[i];
+      final partB = partsB[i];
+
+      final isPartANumeric = int.tryParse(partA) != null;
+      final isPartBNumeric = int.tryParse(partB) != null;
+
+      if (isPartANumeric && isPartBNumeric) {
+        final num numA = int.parse(partA);
+        final num numB = int.parse(partB);
+        if (numA != numB) {
+          return numA.compareTo(numB);
+        }
+      } else if (partA != partB) {
+        return partA.compareTo(partB);
+      }
+    }
+
+    return partsA.length.compareTo(partsB.length);
   }
 
   @override

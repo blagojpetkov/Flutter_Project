@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:postojka/main.dart';
 import 'package:postojka/models/BusStop.dart';
-import 'package:postojka/models/enumerations/app_screens.dart';
 import 'package:postojka/screens/bus_stop_detail_screen.dart'; // Ensure this import exists.
 import 'package:postojka/services/http_service.dart';
 import 'package:postojka/services/voice_service.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 
 class BusStopsScreen extends StatefulWidget {
   @override
@@ -44,12 +44,36 @@ class _BusStopsScreenState extends State<BusStopsScreen> with RouteAware {
   // This function will filter the stops based on the search query
   List<BusStop> _filterStops(List<BusStop> stops, String query) {
     if (query.isEmpty) {
+      stops.sort(_customCyrillicCompare);
       return stops;
     }
-    return stops
+
+    final filteredStops = stops
         .where((stop) => stop.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
+
+    filteredStops.sort(_customCyrillicCompare);
+
+    return filteredStops;
   }
+
+
+  int _customCyrillicCompare(BusStop a, BusStop b) {
+
+    String cyrillicOrder = 'АБВГДЃЕЖЗЅИЈКЛЉМНЊОПРСТЌУФХЦЧЏШ';
+
+    for (int i = 0; i < min(a.name.length, b.name.length); i++) {
+      int indexA = cyrillicOrder.indexOf(a.name[i]);
+      int indexB = cyrillicOrder.indexOf(b.name[i]);
+
+      if (indexA != indexB) {
+        return indexA.compareTo(indexB);
+      }
+    }
+
+    return a.name.length.compareTo(b.name.length);
+  }
+
 
   @override
   Widget build(BuildContext context) {
