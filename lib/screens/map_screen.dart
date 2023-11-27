@@ -218,7 +218,6 @@ class _MapScreenState extends State<MapScreen> {
 
   void _checkRouteAvailability() {
     if (startLocation == null || endLocation == null) {
-      // Show an error or prompt the user to select both stops
       return;
     }
 
@@ -272,10 +271,10 @@ class _MapScreenState extends State<MapScreen> {
         content: lines.isNotEmpty
             ? Container(
                 width: double
-                    .maxFinite, // Ensures the container takes full width of the dialog
+                    .maxFinite,
                 child: ListView.builder(
                   shrinkWrap:
-                      true, // Makes the ListView only occupy needed space
+                      true,
                   itemCount: lines.length,
                   itemBuilder: (context, index) {
                     return Card(
@@ -288,7 +287,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         onTap: () {
                           Navigator.of(context)
-                              .pop(); // Close the dialog before navigating
+                              .pop();
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => BusLineDetailScreen(
@@ -330,7 +329,7 @@ class _MapScreenState extends State<MapScreen> {
         position: LatLng(_locationData!.latitude!, _locationData!.longitude!),
         infoWindow: const InfoWindow(title: "Вашата локација"),
         icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueBlue), // You can customize the marker icon
+            BitmapDescriptor.hueBlue),
       );
       _markers.add(userMarker!);
     } else {
@@ -351,7 +350,7 @@ class _MapScreenState extends State<MapScreen> {
           position: LatLng(position.latitude, position.longitude),
           infoWindow: const InfoWindow(title: "Почетна локација"),
           icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueMagenta), // You can customize the marker icon
+              BitmapDescriptor.hueMagenta),
         );
         _markers.add(startMarker!);
       } else if (endLocation == null) {
@@ -361,7 +360,7 @@ class _MapScreenState extends State<MapScreen> {
           position: LatLng(position.latitude, position.longitude),
           infoWindow: const InfoWindow(title: "Крајна локација"),
           icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueYellow), // You can customize the marker icon
+              BitmapDescriptor.hueYellow),
         );
         _markers.add(endMarker!);
       }

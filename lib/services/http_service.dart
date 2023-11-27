@@ -3,11 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:postojka/main.dart';
 import 'package:postojka/models/BusStopLine.dart';
-import 'package:postojka/models/enumerations/app_screens.dart';
-import 'package:postojka/screens/bus_line_detail_screen.dart';
-import 'package:postojka/screens/bus_stop_detail_screen.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/BusLine.dart';
@@ -28,13 +24,6 @@ class HttpService with ChangeNotifier {
 
   //Used to execute the fetchToken method every X seconds
   Timer? _timer;
-
-  AppScreens currentScreen = AppScreens.BusLines;
-
-  void setCurrentScreen(AppScreens screen) {
-    currentScreen = screen;
-    print("Current screen is " + currentScreen.toString());
-  }
 
   int currentIndex = 2;
   void setCurrentIndex(int index) {
@@ -62,7 +51,7 @@ class HttpService with ChangeNotifier {
     _timer = Timer.periodic(const Duration(seconds: 30), (timer) async {
       print("EXECUTED TIMER fetchBusStopLines");
       busStopLines = await fetchBusStopLines();
-      notifyListeners();
+      // notifyListeners();
     });
     loadFavorites();
   }
@@ -214,29 +203,56 @@ class HttpService with ChangeNotifier {
   }
 
   void fetchToken() async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/rest-auth/guests?aid=3136'),
-      headers: {"Content-Type": "application/json"},
-    );
+    int retryCount = 0;
+    const int maxRetries = 3;
+    bool tokenFetched = false;
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      token = json.decode(response.body);
-      if (token is String) {
-        print("Token is set in http_service to: " + (this.token ?? " null"));
-      } else {
-        throw Exception('Failed to fetch token');
+    while (retryCount < maxRetries && !tokenFetched) {
+      try {
+        final response = await http.post(
+          Uri.parse('$baseUrl/rest-auth/guests?aid=3136'),
+          headers: {"Content-Type": "application/json"},
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          token = json.decode(response.body);
+          if (token is String) {
+            print("Token is set in http_service to: " + (token ?? " null"));
+            tokenFetched = true; // Mark as fetched successfully
+          } else {
+            throw Exception('Failed to fetch token');
+          }
+        } else {
+          print(
+              "Request to fetch token failed with status: ${response.statusCode}");
+          throw Exception('Failed to fetch token');
+        }
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          print("Failed to fetch token after $maxRetries attempts.");
+          rethrow; // Rethrow the exception if all retries failed
+        }
+
+        // Optional: Delay before retrying
+        await Future.delayed(Duration(seconds: 2));
       }
-    } else {
-      print("Request to fetch token failed");
     }
 
-    routes = await fetchRoutes();
-    lines = await fetchLines();
-    stops = await fetchStops();
-    busStopLines = await fetchBusStopLines();
-    isDataLoaded = true;
-    print("Data Loaded Successfully");
-    notifyListeners();
+    if (tokenFetched) {
+      // Proceed with fetching other data
+      routes = await fetchRoutes();
+      lines = await fetchLines();
+      stops = await fetchStops();
+      busStopLines = await fetchBusStopLines();
+      isDataLoaded = true;
+      print("Data Loaded Successfully");
+      notifyListeners();
+    } else {
+      // Handle the case where the token couldn't be fetched after retries
+      print("Failed to load data due to token fetch failure.");
+      // Additional error handling can be added here
+    }
   }
 
   Future<List<BusRoute>> fetchRoutes() async {
