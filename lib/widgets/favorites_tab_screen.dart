@@ -13,7 +13,7 @@ class FavoritesTabScreen extends StatefulWidget {
 
 class _FavoritesTabScreenState extends State<FavoritesTabScreen>
     with SingleTickerProviderStateMixin, RouteAware {
-  int _favoriteTabIndex = 0;
+  int _favoriteTabIndex = 1;
   TabController? _tabController;
 
   final _favoritePages = [
@@ -52,7 +52,7 @@ class _FavoritesTabScreenState extends State<FavoritesTabScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(vsync: this, length: _favoritePages.length);
+    _tabController = TabController(vsync: this, length: _favoritePages.length, initialIndex: _favoriteTabIndex);
     _tabController!.addListener(() {
       if (!_tabController!.indexIsChanging) {
         setState(() {

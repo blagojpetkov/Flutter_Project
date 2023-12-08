@@ -31,17 +31,19 @@ class BusLine {
         carrier = '';
 
   factory BusLine.fromJson(Map<String, dynamic> json) {
-    return BusLine(
-      id: json['id'],
-      kind: json['kind'],
-      number: json['number'],
-      name: json['name'],
-      nightly: json['nightly'],
-      routeIds: List<int>.from(json['routeIds']),
-      type: json['type'],
-      carrier: json['carrier'],
-    );
-  }
+  return BusLine(
+    id: json['id'] as int? ?? -1,
+    kind: json['kind'] as String? ?? 'default_kind',
+    number: json['number'] as String? ?? 'default_number',
+    name: json['name'] as String? ?? 'default_name',
+    nightly: json['nightly'] ?? false,
+    routeIds: (json['routeIds'] as List<dynamic>?)
+        ?.map((e) => e as int)
+        .toList() ?? [],
+    type: json['type'] as String? ?? 'default_type',
+    carrier: json['carrier'] as String? ?? 'default_carrier',
+  );
+}
 
   Map<String, dynamic> toJson() => {
         'id': id,

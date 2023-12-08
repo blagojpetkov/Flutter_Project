@@ -289,6 +289,7 @@ class HttpService with ChangeNotifier {
           }
           rethrow;
         }
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
     throw Exception('Failed to fetch BusRoutes after multiple attempts.');
@@ -328,6 +329,7 @@ class HttpService with ChangeNotifier {
           }
           rethrow; // For any other exceptions
         }
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
 
@@ -368,6 +370,7 @@ class HttpService with ChangeNotifier {
           }
           rethrow; // For any other exceptions
         }
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
 
@@ -419,6 +422,7 @@ class HttpService with ChangeNotifier {
           }
           rethrow;
         }
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
 

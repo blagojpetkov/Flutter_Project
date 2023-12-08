@@ -70,15 +70,11 @@ class SettingsScreen extends StatelessWidget {
             width: buttonWidth,
             child: ElevatedButton(
               onPressed: () async {
-                print("Pressing haptic button");
-                if (await Vibration.hasVibrator() != null) {
-                  Vibration.vibrate();
-                }
-                // Navigator.of(context).push(
-                //   MaterialPageRoute(
-                //     builder: (context) => BusAlarmScreen(),
-                //   ),
-                // );
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => BusAlarmScreen(),
+                  ),
+                );
               },
               child: Text('Alarm'),
             ),

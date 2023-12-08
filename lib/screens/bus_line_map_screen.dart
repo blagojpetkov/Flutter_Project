@@ -43,8 +43,7 @@ class _BusLineMapScreenState extends State<BusLineMapScreen> {
       markerId: const MarkerId("user_location"),
       position: LatLng(0, 0), // Initial position
       infoWindow: const InfoWindow(title: "Вашата локација"),
-      icon: BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueAzure),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
     );
     _markers.add(_userMarker!);
   }
@@ -134,15 +133,17 @@ class _BusLineMapScreenState extends State<BusLineMapScreen> {
   }
 
   void _updateMarkers() {
-  if (endStop == null) {
-    _markers = _markers.map((marker) => 
-      marker.copyWith(iconParam: BitmapDescriptor.defaultMarker)
-    ).toSet();
-  } else {
     _markers = _markers.map((marker) {
-      if (marker.markerId == MarkerId(endStop!.id.toString())) {
+      if (endStop != null && marker.markerId == MarkerId(endStop!.id.toString())) {
         return marker.copyWith(
-          iconParam: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          iconParam:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        );
+      } else if (_userMarker != null &&
+          marker.markerId == _userMarker!.markerId) {
+        return marker.copyWith(
+          iconParam:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         );
       } else {
         return marker.copyWith(
@@ -151,7 +152,6 @@ class _BusLineMapScreenState extends State<BusLineMapScreen> {
       }
     }).toSet();
   }
-}
 
   @override
   Widget build(BuildContext context) {
